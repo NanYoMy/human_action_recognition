@@ -76,8 +76,7 @@ def encoder(x, h_dim, z_dim, reuse=False):
         #net2 = tf.layers.conv2d(net2, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net3 = tf.concat([net2,net1, net0], axis=3)
         # net3 = tf.layers.conv2d(net3, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net3 = tf.layers.conv2d(net3, h_dim, kernel_size=5,
-                                padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net3 = tf.layers.conv2d(net3, h_dim, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
         #net3 = tf.contrib.layers.batch_norm(net3, updates_collections=None, decay=0.99, scale=True, center=True)
         net3 = tf.nn.relu(net3)
         net3 = tf.contrib.layers.max_pool2d(net3, 2)
