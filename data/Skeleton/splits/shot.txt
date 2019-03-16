@@ -1,0 +1,5 @@
+D:\workspace\prototypical-networks-tensorflow\data\Skeleton\data\a10_s1_t1_skeleton.mat
+D:\workspace\prototypical-networks-tensorflow\data\Skeleton\data\a10_s1_t2_skeleton.mat
+D:\workspace\prototypical-networks-tensorflow\data\Skeleton\data\a10_s1_t3_skeleton.mat
+D:\workspace\prototypical-networks-tensorflow\data\Skeleton\data\a10_s1_t4_skeleton.mat
+D:\workspace\prototypical-networks-tensorflow\data\Skeleton\data\a10_s2_t1_skeleton.mat
