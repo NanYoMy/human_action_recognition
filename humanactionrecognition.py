@@ -34,14 +34,6 @@ z_dim = 16
 #tag 92.1
 
 
-
-def dilated_conv_block(inputs, out_channels, name='conv'):
-    with tf.variable_scope(name):
-        conv = tf.layers.conv2d(inputs, out_channels, kernel_size=[3,3],dilation_rate=[7,1],padding='same')  # 64 filters, each filter will generate a feature map.
-        conv = tf.contrib.layers.batch_norm(conv, updates_collections=None, decay=0.99, scale=True, center=True)
-        conv = tf.nn.relu(conv)
-        #conv = tf.contrib.layers.max_pool2d(conv, 2)
-        return conv
 def conv_block(inputs, out_channels, name='conv'):
     with tf.variable_scope(name):
         conv = tf.layers.conv2d(inputs, out_channels, kernel_size=4,padding='SAME')  # 64 filters, each filter will generate a feature map.
@@ -49,7 +41,7 @@ def conv_block(inputs, out_channels, name='conv'):
         conv = tf.nn.relu(conv)
         conv = tf.contrib.layers.max_pool2d(conv, 3)
         return conv
-def encoder_using_conv(x, h_dim, z_dim, reuse=False):
+def encoder__conv(x, h_dim, z_dim, reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
 
         net = conv_block(x, h_dim, name='conv_1')
@@ -58,8 +50,6 @@ def encoder_using_conv(x, h_dim, z_dim, reuse=False):
         #net = conv_block(net, z_dim, name='conv_4')
         net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
-def dilated_conv_block(inputs, out_channels, name='dilated_conv_block'):
-   pass
 
 def encoder(x, h_dim, z_dim, reuse=False):
     with tf.variable_scope('encoder_dilated_conv', reuse=reuse):
@@ -227,7 +217,7 @@ print(test_dataset.shape)#(10, 32, 60, 40, 3)
 
 
 
-print('Testing...')
+print('Testing unsee classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
@@ -249,3 +239,9 @@ for epi in range(n_test_episodes):
 avg_acc /= n_test_episodes
 avg_ls/=n_test_episodes
 print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
+
+'''
+训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取，
+测试的修改：现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
+图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
+'''
