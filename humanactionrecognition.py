@@ -12,9 +12,10 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 800
+n_episodes = 1500
 n_train_classes=10
 n_sample_per_class=32
+
 
 n_way = 5
 n_shot = 5
@@ -190,7 +191,9 @@ for epi in range(n_episodes):
         选n_shot+n_query进行训练
         n_shot是作为参数，n_query作为训练样本
         '''
-        selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
+        #selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
+        #only 10 sample will used to train the model
+        selected = np.random.permutation(n_shot+n_query)[:n_shot + n_query]
         support[i] = train_dataset[epi_cls, selected[:n_shot]]
         query[i] = train_dataset[epi_cls, selected[n_shot:]]
     # support = np.expand_dims(support, axis=-1)
@@ -241,7 +244,7 @@ avg_ls/=n_test_episodes
 print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
 
 '''
-训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取，
-测试的修改：现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
+#， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取，
+#， 测试的修改：现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
 图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
 '''
