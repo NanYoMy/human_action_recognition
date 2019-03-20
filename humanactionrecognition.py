@@ -14,10 +14,7 @@ import scipy.io as sio
 n_epochs = 10
 n_episodes = 3000
 n_classes=27
-
 n_sample_per_class=32
-
-
 n_way = n_classes
 n_support = 4
 n_query = 4
