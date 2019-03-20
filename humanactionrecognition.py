@@ -12,7 +12,7 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 2000
+n_episodes = 3000
 n_classes=27
 
 n_sample_per_class=32
