@@ -19,14 +19,14 @@ n_sample_per_class=32
 
 
 n_way = n_classes
-n_support = 5
-n_query = 5
+n_support = 4
+n_query = 4
 
 #test setting
 n_test_episodes = 1500
 n_test_way = n_classes
 
-n_test_support = 5
+n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
 
@@ -144,7 +144,7 @@ def getall(data_addr,n_classes,offset=0):
         data_set[i,j]=sample.swapaxes(1,0)
     return data_set
 
-def prepar_data(data_addr,n_classes):
+def prepar_data2(data_addr,n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
     test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
     all_data_set=getall(data_addr, n_classes)
@@ -159,6 +159,28 @@ def prepar_data(data_addr,n_classes):
     for i in range(n_classes):
         for j, id in enumerate(test_sample_id):
             test_data_set[i,j]=all_data_set[i,id]#n_query+n_shot training sample
+    return test_data_set,train_data_set
+
+
+def prepar_data(data_addr,n_classes):
+    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
+    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
+    all_data_set=getall(data_addr, n_classes)
+
+
+
+    for i in range(n_classes):
+        itr_train = 0
+        for j in range(n_sample_per_class):
+            if j%4==0:
+                train_data_set[i,itr_train]=all_data_set[i,j]
+                itr_train+=1#n_query+n_shot training sample
+    for i in range(n_classes):
+        itr_test = 0
+        for j in range(n_sample_per_class):
+            if j % 4 != 0:
+                test_data_set[i, itr_test] = all_data_set[i, j]
+                itr_test += 1
     return test_data_set,train_data_set
 
 
