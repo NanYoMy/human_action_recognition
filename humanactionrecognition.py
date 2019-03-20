@@ -72,7 +72,6 @@ def encoder(x, h_dim, z_dim, reuse=False):
         #net3 = tf.contrib.layers.batch_norm(net3, updates_collections=None, decay=0.99, scale=True, center=True)
         net3 = tf.nn.relu(net3)
         net3 = tf.contrib.layers.max_pool2d(net3, 2)
-        
         #dense
         net4 = tf.contrib.layers.flatten(net3)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net4
@@ -227,7 +226,7 @@ for epi in range(n_episodes):
 
 
 
-print('Testing unsee classes...')
+print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
@@ -235,10 +234,11 @@ for epi in range(n_test_episodes):
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
-        selected_query = np.random.permutation(n_test_query)[:n_test_query]#22个样本
+
         selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
-        support[i] = train_dataset[epi_cls, selected_support ]#从训练集合取support样本
-        query[i] = test_dataset[epi_cls, selected_query ]
+        selected_query = np.random.permutation(n_test_query)#22个样本
+        support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
+        query[i] = test_dataset[epi_cls, selected_query]
     # support = np.expand_dims(support, axis=-1)
     # query = np.expand_dims(query, axis=-1)
     labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)

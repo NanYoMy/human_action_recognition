@@ -12,7 +12,7 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 1500
+n_episodes = 2500
 n_train_classes=10
 n_sample_per_class=32
 
@@ -200,6 +200,7 @@ for epi in range(n_episodes):
     # query = np.expand_dims(query, axis=-1)
     labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
     # c=sess.run(Test_C,feed_dict={Test_A:np.zeros([30,40,60,3]),Test_B:np.ones([40,40,60,1])})
+    one_hot=sess.run(y_one_hot,feed_dict={x: support, q: query, y: labels})
     # print(c.shape)
     _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
     # avg_acc += ac
@@ -220,7 +221,7 @@ print(test_dataset.shape)#(10, 32, 60, 40, 3)
 
 
 
-print('Testing unsee classes...')
+print('Testing unseen classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
