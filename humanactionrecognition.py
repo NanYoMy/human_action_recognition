@@ -13,20 +13,21 @@ import scipy.io as sio
 #train setting
 n_epochs = 10
 n_episodes = 1500
-n_train_classes=10
+n_classes=27
+
 n_sample_per_class=32
 
 
-n_way = 5
-n_shot = 5
+n_way = n_classes
+n_support = 5
 n_query = 5
 
 #test setting
-n_test_episodes = 1500
-n_test_way = 5
-n_test_classes=17
-n_test_shot = 5
-n_test_query = 27#n_test_shot+n_test_query<=32
+n_test_episodes = 100
+n_test_way = n_classes
+
+n_test_support = 5
+n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
 
 im_width, im_height, channels = 40, 60, 3
@@ -122,27 +123,36 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
     sample=resize(im)
     return sample
 
-def prepar_data(data_addr,n_classes,offset=0):
-    train_data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
+def getall(data_addr,n_classes,offset=0):
+    data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
     for j in range(len(data_addr)):
-        #print(data_addr[j])
         skelet = load_data(data_addr[j])# skelet是numpy的ndarray类型
-        #print(data_addr[j])
         token = data_addr[j].split('\\')[-1].split('_')
-        i=int(token[0][1:])-1-offset
-        j=(int(token[1][1:])-1)*4+int(token[2][1:])-1
+        i=int(token[0][1:])-1-offset#class
+        j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet)
-        #print("%d,%d"%(i,j))
-        train_data_set[i,j]=sample.swapaxes(1,0)
-        # print(diff_feature)
-        # ouput_3_gray_imge(diff_feature,data_addr[j])
-        # a = AnimatedScatter(skelet,skelet.shape[2])
-        # a.show()
-    return train_data_set
+        data_set[i,j]=sample.swapaxes(1,0)
+    return data_set
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton\\traindataset\\*.mat'))
-train_dataset=prepar_data(data_addr,n_train_classes)
+def prepar_data(data_addr,n_classes):
+    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
+    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
+    all_data_set=getall(data_addr, n_classes)
+    train_sample_id = np.random.permutation(n_classes)[:n_query + n_support]
+    test_sample_id = np.random.permutation(n_classes)[n_query + n_support:]
+    for i in range(n_classes):
+        for j, id in enumerate(train_sample_id):
+            train_data_set[i,j]=all_data_set[i,id]#n_query+n_shot training sample
+    for i in range(n_classes):
+        for j, id in enumerate(test_sample_id):
+            test_data_set[i,j]=all_data_set[i,id]#n_query+n_shot training sample
+    return test_data_set,train_data_set
+
+
+data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
+test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)#(10, 32, 60, 40, 3)
+print(test_dataset.shape)#(10, 32, 60, 40, 3)
 regularizer = tf.contrib.layers.l1_regularizer(0.0)
 
 x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
@@ -183,8 +193,8 @@ for epi in range(n_episodes):
     '''
     随机产生一个数组，包含0-n_classes,取期中n_way个类
     '''
-    epi_classes = np.random.permutation(n_train_classes)[:n_way]  # n_way表示类别
-    support = np.zeros([n_way, n_shot, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
+    epi_classes = np.random.permutation(n_classes)[:n_way]  # n_way表示类别
+    support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
     query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
         '''
@@ -193,9 +203,9 @@ for epi in range(n_episodes):
         '''
         #selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
         #only 10 sample will used to train the model
-        selected = np.random.permutation(n_shot+n_query)[:n_shot + n_query]
-        support[i] = train_dataset[epi_cls, selected[:n_shot]]
-        query[i] = train_dataset[epi_cls, selected[n_shot:]]
+        selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+        support[i] = train_dataset[epi_cls, selected[:n_support]]
+        query[i] = train_dataset[epi_cls, selected[n_support:]]
     # support = np.expand_dims(support, axis=-1)
     # query = np.expand_dims(query, axis=-1)
     labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
@@ -214,9 +224,6 @@ for epi in range(n_episodes):
 # avg_ls/=n_episodes
 # print('average acc: {:.5f}, average loss: {:.5f}'.format(avg_acc,avg_ls ))
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton\\testdataset\\*.mat'))
-test_dataset=prepar_data(data_addr,n_test_classes,offset=10)
-print(test_dataset.shape)#(10, 32, 60, 40, 3)
 
 
 
@@ -224,13 +231,14 @@ print('Testing unsee classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
-    epi_classes = np.random.permutation(n_test_classes)[:n_test_way]
-    support = np.zeros([n_test_way, n_test_shot, im_height, im_width,channels], dtype=np.float32)
+    epi_classes = np.random.permutation(n_classes)[:n_test_way]
+    support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
-        selected = np.random.permutation(n_sample_per_class)[:n_test_shot + n_test_query]
-        support[i] = test_dataset[epi_cls, selected[:n_test_shot]]
-        query[i] = test_dataset[epi_cls, selected[n_test_shot:]]
+        selected_query = np.random.permutation(n_test_query)[:n_test_query]#22个样本
+        selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
+        support[i] = train_dataset[epi_cls, selected_support ]#从训练集合取support样本
+        query[i] = test_dataset[epi_cls, selected_query ]
     # support = np.expand_dims(support, axis=-1)
     # query = np.expand_dims(query, axis=-1)
     labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
