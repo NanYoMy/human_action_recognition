@@ -23,7 +23,7 @@ n_support = 5
 n_query = 5
 
 #test setting
-n_test_episodes = 100
+n_test_episodes = 1500
 n_test_way = n_classes
 
 n_test_support = 5
@@ -55,26 +55,39 @@ def encoder__conv(x, h_dim, z_dim, reuse=False):
 
 def encoder(x, h_dim, z_dim, reuse=False):
     with tf.variable_scope('encoder_dilated_conv', reuse=reuse):
-        # net0 = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
-        net0=x
-        net1 = tf.layers.conv2d(net0, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
-        #net1 = tf.layers.conv2d(net1, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        #net1 = tf.contrib.layers.batch_norm(net1, updates_collections=None, decay=0.99, scale=True, center=True)
-        #net1 = tf.nn.relu(net1)
-        # net1=tf.contrib.layers.max_pool2d(net1, 2)
-        net_concat_0_1 = tf.concat([net1, net0], axis=3)
+        # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
+        #---------#
+        block_1_in=x
+        block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
+        block_1_out = tf.layers.conv2d(block_1_out, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        #---------#
 
-        net2 = tf.layers.conv2d(net_concat_0_1, h_dim*2, kernel_size=[3, 3], dilation_rate=[2, 2],padding='SAME')
-        #net2 = tf.layers.conv2d(net2, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net3 = tf.concat([net2,net1, net0], axis=3)
-        # net3 = tf.layers.conv2d(net3, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net3 = tf.layers.conv2d(net3, h_dim, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        #net3 = tf.contrib.layers.batch_norm(net3, updates_collections=None, decay=0.99, scale=True, center=True)
-        net3 = tf.nn.relu(net3)
-        net3 = tf.contrib.layers.max_pool2d(net3, 2)
+        #---------#
+        block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim, kernel_size=[2, 3], dilation_rate=[4, 4],padding='SAME')
+        block_2_out = tf.layers.conv2d(block_2_out, h_dim, kernel_size=2, padding='SAME')
+        #---------#
+
+        #---------#
+        block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim, kernel_size=[2, 3], dilation_rate=[6, 6],padding='SAME')
+        block_3_out = tf.layers.conv2d(block_3_out, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        #---------#
+
+        #block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True, center=True)
+
+        net = tf.layers.conv2d(block_3_out, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.nn.relu(net)
+        net = tf.contrib.layers.max_pool2d(net, 2)
+
+        net = tf.layers.conv2d(net, h_dim, kernel_size=4,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.nn.relu(net)
+        net = tf.contrib.layers.max_pool2d(net, 2)
+
         #dense
-        net4 = tf.contrib.layers.flatten(net3)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-        return net4
+        net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
+
+        return net
 
 def euclidean_distance(a, b): # a是query b是protypical
     # a.shape = N x D
@@ -137,8 +150,11 @@ def prepar_data(data_addr,n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
     test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
     all_data_set=getall(data_addr, n_classes)
-    train_sample_id = np.random.permutation(n_classes)[:n_query + n_support]
-    test_sample_id = np.random.permutation(n_classes)[n_query + n_support:]
+    selected=np.random.permutation(n_sample_per_class)
+    train_sample_id = selected[:n_query + n_support]
+
+    test_sample_id = selected[n_query + n_support:]
+
     for i in range(n_classes):
         for j, id in enumerate(train_sample_id):
             train_data_set[i,j]=all_data_set[i,id]#n_query+n_shot training sample
@@ -224,8 +240,6 @@ for epi in range(n_episodes):
 # print('average acc: {:.5f}, average loss: {:.5f}'.format(avg_acc,avg_ls ))
 
 
-
-
 print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
@@ -252,7 +266,7 @@ avg_ls/=n_test_episodes
 print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
 
 '''
-#， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取，
-#， 测试的修改：现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
+#， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取， 完成
+#， 测试的修改：分27类 现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
 图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
 '''
