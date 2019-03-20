@@ -12,7 +12,7 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 1500
+n_episodes = 800
 n_classes=27
 
 n_sample_per_class=32
@@ -31,9 +31,8 @@ n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query
 
 
 im_width, im_height, channels = 40, 60, 3
-h_dim = 8
+h_dim = 16
 z_dim = 16
-#tag 92.1
 
 
 def conv_block(inputs, out_channels, name='conv'):
@@ -59,31 +58,27 @@ def encoder(x, h_dim, z_dim, reuse=False):
         #---------#
         block_1_in=x
         block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
-        #block_1_out = tf.layers.conv2d(block_1_out, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
         block_1_out = tf.nn.relu(block_1_out)
         #---------#
 
         #---------#
         block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
-        block_2_out = tf.layers.conv2d(block_2_in, h_dim, kernel_size=[2, 3], dilation_rate=[4, 4],padding='SAME')
-        #block_2_out = tf.layers.conv2d(block_2_out, h_dim, kernel_size=2, padding='SAME')
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_2_out = tf.nn.relu(block_2_out)
         #---------#
 
         #---------#
         block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
-        block_3_out = tf.layers.conv2d(block_3_in, h_dim, kernel_size=[2, 3], dilation_rate=[6, 6],padding='SAME')
-        #block_3_out = tf.layers.conv2d(block_3_out, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
 
         #block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True, center=True)
 
-        net = tf.layers.conv2d(block_3_out, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.nn.relu(net)
-        net = tf.contrib.layers.max_pool2d(net, 2)
-
-        net = tf.layers.conv2d(net, h_dim, kernel_size=4,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(block_3_out, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.nn.relu(net)
         net = tf.contrib.layers.max_pool2d(net, 2)
 
