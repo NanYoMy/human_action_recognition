@@ -12,14 +12,14 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 3000
+n_episodes = 800
 n_classes=27
 n_sample_per_class=32
 n_way = n_classes
 n_support = 4
 n_query = 4
 #test setting
-n_test_episodes = 1500
+n_test_episodes = 1000
 n_test_way = n_classes
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
@@ -58,33 +58,36 @@ def encoder(x, h_dim, z_dim, reuse=False):
 
         #---------#
         block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
-        block_2_out = tf.layers.conv2d(block_2_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
         #block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_2_out = tf.nn.relu(block_2_out)
         #---------#
 
         #---------#
         block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
-        block_3_out = tf.layers.conv2d(block_3_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
         #block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
 
         # ---------#
-        block_4_in = tf.concat([block_3_out,block_2_out, block_1_out, block_1_in], axis=3)
-        block_4_out = tf.layers.conv2d(block_4_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2], padding='SAME')
-        # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
-        block_4_out = tf.nn.relu(block_4_out)
+        # block_4_in = tf.concat([block_3_out,block_2_out, block_1_out, block_1_in], axis=3)
+        # block_4_out = tf.layers.conv2d(block_4_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2], padding='SAME')
+        # # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        # block_4_out = tf.nn.relu(block_4_out)
         # ---------#
 
         #block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True, center=True)
 
-        net = tf.layers.conv2d(block_4_out, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(block_3_out, h_dim*2, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.nn.relu(net)
+        net = tf.contrib.layers.max_pool2d(net, 2)
+        net = tf.layers.conv2d(net, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.nn.relu(net)
         net = tf.contrib.layers.max_pool2d(net, 2)
         #dense
         net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-
+        net = tf.contrib.layers.flatten(net)
         return net
 
 def euclidean_distance(a, b): # a是query b是protypical
