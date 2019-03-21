@@ -12,7 +12,7 @@ import scipy.io as sio
 
 #train setting
 n_epochs = 10
-n_episodes = 550
+n_episodes = 400
 n_classes=27
 n_sample_per_class=32
 n_way = n_classes
@@ -50,7 +50,7 @@ def encoder(x, h_dim, z_dim, reuse=False):
     with tf.variable_scope('encoder_dilated_conv', reuse=reuse):
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
-        block_1_in=x
+        block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
         block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
         #block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
         block_1_out = tf.nn.relu(block_1_out)
