@@ -10,7 +10,6 @@ from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
 
-
 #train setting
 n_epochs = 20
 n_episodes = 80
