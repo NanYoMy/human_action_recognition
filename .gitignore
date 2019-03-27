@@ -6,3 +6,4 @@ data/omniglot/data/*
 *.npy
 *.tar
 *.JPEG
+/.idea
