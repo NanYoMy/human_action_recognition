@@ -9,7 +9,10 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
-
+'''
+training:利用类编号为1-10的样本,使用5个support样本，利用5个query,对模型进行训练，
+inference:利用类编号为11-27的样本,使用5个support样本，利用27个query,对模型进行评估，
+'''
 #train setting
 n_epochs = 10
 n_episodes = 2500

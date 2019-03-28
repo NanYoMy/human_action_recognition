@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
+'''
+training:使用一个support样本，利用7个query,对模型进行训练
+inference:使用一个从train样本中得到的support样本，对剩余的24样本进行评估，
+'''
 #train setting
 n_epochs = 20
 n_episodes = 90
