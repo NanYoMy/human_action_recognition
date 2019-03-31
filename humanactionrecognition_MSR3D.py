@@ -105,7 +105,7 @@ def prepar_data(data_addr,n_classes):
     test_data={}
     for i in all_data_set.keys():
         class_data=all_data_set.get(i)
-        class_data=random.shuffle(class_data)
+        random.shuffle(class_data)
         length=len(class_data)
         train_i_data=list()
         test_i_data=list()
