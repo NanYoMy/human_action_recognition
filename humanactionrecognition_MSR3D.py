@@ -101,7 +101,7 @@ def getall(data_addr,n_classes,offset=0):
 def prepar_data(data_addr,n_classes):
     all_data_set=getall(data_addr, n_classes)
     all_data_set.keys()#所有的类应该为20
-    train_data={}
+    train_data=np.zeros([n_classes,n_query+n_support,im_height, im_width, 3], dtype=np.float32)
     test_data={}
     for i in all_data_set.keys():
         class_data=all_data_set.get(i)
@@ -111,12 +111,11 @@ def prepar_data(data_addr,n_classes):
         test_i_data=list()
         for j in range(length):
             if j<n_query+n_support:
-                train_i_data.append(class_data[j])
+                train_data[i-1,j]=class_data[j]#直接构成数组
             else:
-                test_i_data.append(class_data[j])
-        train_data[i]=train_i_data
+                test_i_data.append(class_data[j])#由于样本数量不固定，用hashb表
         test_data[i]=test_i_data
-    return  train_data,test_data
+    return  test_data,train_data
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
@@ -170,7 +169,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
 data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeletonReal3D\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
-
+print(train_dataset.shape)
 
 x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
 q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
@@ -222,7 +221,6 @@ for epi in range(n_episodes):
     print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
 
 
-
 print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
@@ -231,13 +229,13 @@ for epi in range(n_test_episodes):
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
-
+        print(epi_cls)
         selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
-        selected_query = np.random.permutation(n_test_query)#22个样本
+        test_data=test_dataset.get(epi_cls)
         support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-        query[i] = test_dataset[epi_cls, selected_query]
-    # support = np.expand_dims(support, axis=-1)
-    # query = np.expand_dims(query, axis=-1)
+        #query[i] = test_dataset[epi_cls, selected_query]
+
+
     labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
     ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
 
