@@ -7,3 +7,6 @@ data/omniglot/data/*
 *.tar
 *.JPEG
 /.idea
+MSRAction3DSkeletonReal3D
+drawskt
+MSRAction3DSkeleton(20joints)
