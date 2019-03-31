@@ -16,7 +16,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_epochs = 20
 n_episodes = 80
-n_classes=27
+n_classes=20
 n_sample_per_class=32
 n_way = n_classes
 n_support = 4
@@ -30,6 +30,10 @@ n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query
 im_width, im_height, channels = 40, 60, 3
 h_dim = 8
 z_dim = 64
+def load_txt_data(path):
+    skelet = numpy.genfromtxt(path, delimiter=" ", dtype=np.float32)
+
+    return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
     # b.shape = Class_Number x D
@@ -71,10 +75,12 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+
 def getall(data_addr,n_classes,offset=0):
-    data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
+    data_set={}
+    data_class=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
     for j in range(len(data_addr)):
-        skelet = load_data(data_addr[j])# skelet是numpy的ndarray类型
+        skelet = load_txt_data(data_addr[j])# skelet是numpy的ndarray类型
         token = data_addr[j].split('\\')[-1].split('_')
         i=int(token[0][1:])-1-offset#class
         j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
@@ -82,8 +88,6 @@ def getall(data_addr,n_classes,offset=0):
         data_set[i,j]=sample.swapaxes(1,0)
     return data_set
 def prepar_data(data_addr,n_classes):
-    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
-    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
     all_data_set=getall(data_addr, n_classes)
 
     for i in range(n_classes):
