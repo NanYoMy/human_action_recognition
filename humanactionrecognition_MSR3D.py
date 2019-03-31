@@ -9,11 +9,15 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
+
+import random
 #train setting
 '''
 training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
+
+n_joint=20
 n_epochs = 20
 n_episodes = 80
 n_classes=20
@@ -31,8 +35,12 @@ im_width, im_height, channels = 40, 60, 3
 h_dim = 8
 z_dim = 64
 def load_txt_data(path):
-    skelet = numpy.genfromtxt(path, delimiter=" ", dtype=np.float32)
-
+    print(path)
+    skelet = np.loadtxt(path, delimiter=" ", dtype=np.float32)#1080 * 4
+    frame=int(skelet.shape[0]/n_joint)
+    skelet=skelet.reshape(n_joint,frame,4)
+    skelet=np.delete(skelet,3,axis=2)
+    skelet=skelet.swapaxes(1,2)
     return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
@@ -45,6 +53,7 @@ def euclidean_distance(query=None, prototype=None): # a是query b是protypical
 def load_data(path):
     data = sio.loadmat(path)
     skelet=data['d_skel']
+
     #print(skelet.shape)#(20,3,48) 20个点，每个点有xyz, 一共48帧，这里需要处理不帧数的样本
     return skelet
 def Normalize(data,factor):
@@ -78,32 +87,36 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
 
 def getall(data_addr,n_classes,offset=0):
     data_set={}
-    data_class=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
     for j in range(len(data_addr)):
         skelet = load_txt_data(data_addr[j])# skelet是numpy的ndarray类型
         token = data_addr[j].split('\\')[-1].split('_')
-        i=int(token[0][1:])-1-offset#class
-        j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
+        i=int(token[0][1:])
+        data_class=data_set.get(i)
+        if not data_class:
+            data_set[i]=list()
         sample=get_diff_feature(skelet)
-        data_set[i,j]=sample.swapaxes(1,0)
+        data_set[i].append(sample.swapaxes(1,0))
+
     return data_set
 def prepar_data(data_addr,n_classes):
     all_data_set=getall(data_addr, n_classes)
-
-    for i in range(n_classes):
-        itr_train = 0
-        for j in range(n_sample_per_class):
-            if j%4==0:
-                train_data_set[i,itr_train]=all_data_set[i,j]
-                itr_train+=1#n_query+n_shot training sample
-    for i in range(n_classes):
-        itr_test = 0
-        for j in range(n_sample_per_class):
-            if j % 4 != 0:
-                test_data_set[i, itr_test] = all_data_set[i, j]
-                itr_test += 1
-    return test_data_set,train_data_set
-
+    all_data_set.keys()#所有的类应该为20
+    train_data={}
+    test_data={}
+    for i in all_data_set.keys():
+        class_data=all_data_set.get(i)
+        class_data=random.shuffle(class_data)
+        length=len(class_data)
+        train_i_data=list()
+        test_i_data=list()
+        for j in range(length):
+            if j<n_query+n_support:
+                train_i_data.append(class_data[j])
+            else:
+                test_i_data.append(class_data[j])
+        train_data[i]=train_i_data
+        test_data[i]=test_i_data
+    return  train_data,test_data
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
@@ -155,10 +168,9 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
+data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeletonReal3D\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
-print(train_dataset.shape)#(10, 32, 60, 40, 3)
-print(test_dataset.shape)#(10, 32, 60, 40, 3)
+
 
 x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
 q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
