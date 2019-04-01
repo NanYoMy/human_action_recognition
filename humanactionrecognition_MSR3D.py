@@ -21,7 +21,6 @@ n_joint=20
 n_epochs = 20
 n_episodes = 80
 n_classes=20
-n_sample_per_class=32
 n_way = n_classes
 n_support = 4
 n_query = 4
@@ -29,13 +28,12 @@ n_query = 4
 n_test_episodes = 1000
 n_test_way = n_classes
 n_test_support = n_support
-n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
 im_width, im_height, channels = 40, 60, 3
 h_dim = 8
 z_dim = 64
 def load_txt_data(path):
-    print(path)
+
     skelet = np.loadtxt(path, delimiter=" ", dtype=np.float32)#1080 * 4
     frame=int(skelet.shape[0]/n_joint)
     skelet=skelet.reshape(n_joint,frame,4)
@@ -50,12 +48,7 @@ def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     query = tf.tile(tf.expand_dims(query, axis=1), (1, M, 1))
     prototype = tf.tile(tf.expand_dims(prototype, axis=0), (N, 1, 1))
     return tf.reduce_mean(tf.square(query - prototype), axis=2)
-def load_data(path):
-    data = sio.loadmat(path)
-    skelet=data['d_skel']
 
-    #print(skelet.shape)#(20,3,48) 20个点，每个点有xyz, 一共48帧，这里需要处理不帧数的样本
-    return skelet
 def Normalize(data,factor):
     m = np.mean(data)
     mx = data.max()
@@ -177,7 +170,7 @@ x_shape = tf.shape(x)
 q_shape = tf.shape(q)
 #训练的时候具有support sample的参数
 num_classes, num_support = x_shape[0], x_shape[1]# num_class num_support_sample
-num_queries = q_shape[1]#num_query_sample
+num_q_classes,num_queries =q_shape[0], q_shape[1]#num_query_sample
 #y为label数据由外部导入
 y = tf.placeholder(tf.int64, [None, None])
 y_one_hot = tf.one_hot(y, depth=num_classes)# dimesion of each one_hot vector
@@ -186,11 +179,11 @@ emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, c
 emb_dim = tf.shape(emb_x)[-1] # the last dimesion
 
 emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
-emb_q = encoder(tf.reshape(q, [num_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
+emb_q = encoder(tf.reshape(q, [num_q_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
 
 dists = euclidean_distance(emb_q, emb_x)
 
-log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_classes, num_queries, -1])#-1表示自动计算剩余维度，paper中公式2 log_softmax 默认 axis=-1
+log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_q_classes, num_queries, -1])#-1表示自动计算剩余维度，paper中公式2 log_softmax 默认 axis=-1
 ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_one_hot, log_p_y), axis=-1), [-1]))#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
 acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)))
 
@@ -214,6 +207,12 @@ for epi in range(n_episodes):
         selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
         support[i] = train_dataset[epi_cls, selected[:n_support]]
         query[i] = train_dataset[epi_cls, selected[n_support:]]
+    '''
+    labels=
+            0 0 0 0
+            1 1 1 1
+            2 2 2 2
+    '''
     labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
     _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
 
@@ -227,18 +226,26 @@ avg_ls=0.
 for epi in range(n_test_episodes):
     epi_classes = np.random.permutation(n_classes)[:n_test_way]
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-    query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
-        print(epi_cls)
         selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
         test_data=test_dataset.get(epi_cls)
         support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
         #query[i] = test_dataset[epi_cls, selected_query]
-
-
-    labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
-    ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
-
+    #由于每个类别中的测试样本数目不一致，所以用集合的方式来处理
+    ac=0
+    ls=0
+    for i in test_dataset.keys():
+        test_i_class=test_dataset.get(i)
+        #print(len(test_i_class))
+        query_i = np.zeros([1, len(test_i_class), im_height, im_width, channels], dtype=np.float32)
+        labels_i = np.tile(np.arange(1)[:, np.newaxis], (1, len(test_i_class))).astype(np.uint8)#label取值有问题
+        #y_one_hot_sess=sess.run([y_one_hot],feed_dict={x: support, q: query_i,y:labels_i})
+        #print("lenth {:.5f}".format(len(test_i_class)))
+        #print(y_one_hot_sess)
+        i_ls, i_acc = sess.run([ce_loss, acc], feed_dict={x: support, q: query_i, y: labels_i})
+        print('[ loss_i: {:.5f}, acc_i: {:.5f} '.format(i_ls, i_acc))
+        ac+=i_acc
+        ls+=i_ls
     avg_acc += ac
     avg_ls+=ls
     if (epi+1) % 50 == 0:
