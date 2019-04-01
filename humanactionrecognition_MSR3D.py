@@ -187,7 +187,7 @@ log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_q_classes, num_queries, -1]
 ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_one_hot, log_p_y), axis=-1), [-1]))#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
 acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)))
 
-
+#training time
 train_op = tf.train.AdamOptimizer().minimize(ce_loss)
 sess = tf.InteractiveSession()
 init_op = tf.global_variables_initializer()
@@ -224,6 +224,7 @@ print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
+    print("epi============================================{}".format(epi))
     epi_classes = np.random.permutation(n_classes)[:n_test_way]
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
@@ -237,13 +238,23 @@ for epi in range(n_test_episodes):
     for i in test_dataset.keys():
         test_i_class=test_dataset.get(i)
         #print(len(test_i_class))
+        one_hot_index=0
+        for j, epi_cls in enumerate(epi_classes):
+            if epi_cls==i:
+                one_hot_index=j
+                break
+        #说明在这次random结果当中，
         query_i = np.zeros([1, len(test_i_class), im_height, im_width, channels], dtype=np.float32)
-        labels_i = np.tile(np.arange(1)[:, np.newaxis], (1, len(test_i_class))).astype(np.uint8)#label取值有问题
+        for k in range(len(test_i_class)):
+            query_i[0,k]=test_i_class[k]
+        tmp=np.array([one_hot_index])
+        labels_i = np.tile(tmp[:, np.newaxis], (1, len(test_i_class))).astype(np.uint8)#label取值有问题
         #y_one_hot_sess=sess.run([y_one_hot],feed_dict={x: support, q: query_i,y:labels_i})
         #print("lenth {:.5f}".format(len(test_i_class)))
         #print(y_one_hot_sess)
-        i_ls, i_acc = sess.run([ce_loss, acc], feed_dict={x: support, q: query_i, y: labels_i})
+        i_ls, i_acc,i_dists = sess.run([ce_loss, acc,dists], feed_dict={x: support, q: query_i, y: labels_i})
         print('[ loss_i: {:.5f}, acc_i: {:.5f} '.format(i_ls, i_acc))
+
         ac+=i_acc
         ls+=i_ls
     avg_acc += ac
