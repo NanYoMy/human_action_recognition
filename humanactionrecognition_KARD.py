@@ -158,7 +158,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\*.txt'))# all data
+data_addr = sorted(glob.glob('.\\data\\Skeleton3\\realworld\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)
 print(test_dataset.shape)
