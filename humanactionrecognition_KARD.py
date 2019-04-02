@@ -16,7 +16,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_joint=15
 n_epochs = 20
-n_episodes = 300
+n_episodes = 2000
 n_classes=18
 n_sample_per_class=30
 n_way = n_classes
@@ -102,9 +102,24 @@ def prepar_data(data_addr,n_classes):
                 test_data_set[i, itr_test] = all_data_set[i, j]
                 itr_test += 1
     return test_data_set,train_data_set
+def conv_block(inputs, out_channels, name='conv'):
+    with tf.variable_scope(name):
+        conv = tf.layers.conv2d(inputs, out_channels, kernel_size=[3,6], padding='SAME')#64 filters, each filter will generate a feature map.
+        conv = tf.contrib.layers.batch_norm(conv, updates_collections=None, decay=0.99, scale=True, center=True)
+        conv = tf.nn.relu(conv)
+        # conv = tf.contrib.layers.max_pool2d(conv, 2)
+        # conv = tf.layers.max_pooling2d(conv, [1, 2], strides=[1,2])
+        return conv
+def encoder(x, h_dim, z_dim, reuse=False):
+    with tf.variable_scope('encoder', reuse=reuse):
+        net = conv_block(x, h_dim, name='conv_1')
+        net = conv_block(net, h_dim, name='conv_2')
+        net = conv_block(net, h_dim, name='conv_3')
+        net = conv_block(net, z_dim, name='conv_4')
+        net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
+        return net
 
-
-def encoder(x, h_dim, z_dim,reuse=False):
+def encoder2(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
@@ -135,36 +150,32 @@ def encoder(x, h_dim, z_dim,reuse=False):
         # block_4_out = tf.nn.relu(block_4_out)
         # ---------#
 
-        net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(net, h_dim*8, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
 
-        net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(net, h_dim*4, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
 
-        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(net, h_dim*2, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
 
-        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(net, h_dim*2, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
 
-        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
-        net = tf.nn.relu(net)
-
-        net = tf.layers.max_pooling2d(net, [2, 2], strides=2)
+        net = tf.layers.max_pooling2d(net, [2, 6], strides=2)
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton3\\realworld\\*.txt'))# all data
+data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)#(10, 32, 60, 40, 3)
 print(test_dataset.shape)#(10, 32, 60, 40, 3)
