@@ -71,14 +71,31 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+def ouput_3_gray_imge(diff_feature,path):
+    prename = path.split('\\')[-1]
+    print(prename)
+    x_im=diff_feature[:, :, 0]*255
+    im = Image.fromarray(x_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton\\data\\x_%s.bmp") % (prename))
+
+    y_im=diff_feature[:, :, 1]*255
+    im = Image.fromarray(y_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton\\data\\y_%s.bmp") % (prename))
+
+    z_im=diff_feature[:, :, 2]*255
+    im = Image.fromarray(z_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton\\data\\z_%s.bmp") % (prename))
+
+
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
-    for j in range(len(data_addr)):
-        skelet = load_data(data_addr[j])# skelet是numpy的ndarray类型
-        token = data_addr[j].split('\\')[-1].split('_')
+    for addr in data_addr:
+        skelet = load_data(addr)# skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:])-1-offset#class
         j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet)
+        #ouput_3_gray_imge(sample, addr)
         data_set[i,j]=sample.swapaxes(1,0)
     return data_set
 def prepar_data(data_addr,n_classes):

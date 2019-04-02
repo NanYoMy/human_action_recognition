@@ -16,7 +16,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_joint=15
 n_epochs = 20
-n_episodes = 2000
+n_episodes = 150
 n_classes=18
 n_sample_per_class=30
 n_way = n_classes
@@ -45,6 +45,9 @@ def load_txt_data(path):
     frame=int(skelet.shape[0]/n_joint)
     skelet=skelet.reshape(n_joint,frame,3)
     skelet=skelet.swapaxes(1,2)
+    skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
+    skelet[:, :, 1] = skelet[:, :, 1] - skelet[:, :,1].mean()
+    skelet[:, :, 2] = skelet[:, :, 2] - skelet[:, :, 2].mean()
     return skelet
 def Normalize(data,factor):
     m = np.mean(data)
@@ -74,14 +77,30 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+def ouput_3_gray_imge(diff_feature,path):
+    prename = path.split('\\')[-1]
+    print(prename)
+    x_im=diff_feature[:, :, 0]*255
+    im = Image.fromarray(x_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton3\\realworld\\x_%s.bmp") % (prename))
+
+    y_im=diff_feature[:, :, 1]*255
+    im = Image.fromarray(y_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton3\\realworld\\y_%s.bmp") % (prename))
+
+    z_im=diff_feature[:, :, 2]*255
+    im = Image.fromarray(z_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton3\\realworld\\z_%s.bmp") % (prename))
+
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
-    for j in range(len(data_addr)):
-        skelet = load_txt_data(data_addr[j])# skelet是numpy的ndarray类型
-        token = data_addr[j].split('\\')[-1].split('_')
+    for addr in data_addr:
+        skelet = load_txt_data(addr)# skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:])-1-offset#class
         j=(int(token[1][1:])-1)*3+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet,8)
+        ouput_3_gray_imge(sample,addr)
         data_set[i,j]=sample.swapaxes(1,0)
     return data_set
 def prepar_data(data_addr,n_classes):
@@ -110,7 +129,7 @@ def conv_block(inputs, out_channels, name='conv'):
         # conv = tf.contrib.layers.max_pool2d(conv, 2)
         # conv = tf.layers.max_pooling2d(conv, [1, 2], strides=[1,2])
         return conv
-def encoder(x, h_dim, z_dim, reuse=False):
+def encoder2(x, h_dim, z_dim, reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         net = conv_block(x, h_dim, name='conv_1')
         net = conv_block(net, h_dim, name='conv_2')
@@ -119,7 +138,7 @@ def encoder(x, h_dim, z_dim, reuse=False):
         net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-def encoder2(x, h_dim, z_dim,reuse=False):
+def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
@@ -175,7 +194,7 @@ def encoder2(x, h_dim, z_dim,reuse=False):
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))# all data
+data_addr = sorted(glob.glob('.\\data\\Skeleton3\\realworld\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)#(10, 32, 60, 40, 3)
 print(test_dataset.shape)#(10, 32, 60, 40, 3)

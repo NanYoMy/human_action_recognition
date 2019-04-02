@@ -41,6 +41,8 @@ def load_txt_data(path):
     skelet=skelet.reshape(n_joint,frame,4)
     skelet=np.delete(skelet,3,axis=2)
     skelet=skelet.swapaxes(1,2)
+    skelet[:,:, 1] = 400 - skelet[:,:, 1]
+    skelet[:,:, 2] = skelet[:,:, 2] / 4
     return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
@@ -79,17 +81,32 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+def ouput_3_gray_imge(diff_feature,path):
+    prename = path.split('\\')[-1]
+    print(prename)
+    x_im=diff_feature[:, :, 0]*255
+    im = Image.fromarray(x_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\x_%s.bmp") % (prename))
+
+    y_im=diff_feature[:, :, 1]*255
+    im = Image.fromarray(y_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\y_%s.bmp") % (prename))
+
+    z_im=diff_feature[:, :, 2]*255
+    im = Image.fromarray(z_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\z_%s.bmp") % (prename))
 
 def getall(data_addr,n_classes,offset=0):
     data_set={}
-    for j in range(len(data_addr)):
-        skelet = load_txt_data(data_addr[j])# skelet是numpy的ndarray类型
-        token = data_addr[j].split('\\')[-1].split('_')
+    for addr in data_addr:
+        skelet = load_txt_data(addr)# skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:])-1
         data_class=data_set.get(i)
         if not data_class:
             data_set[i]=list()
         sample=get_diff_feature(skelet)
+        ouput_3_gray_imge(sample,addr)
         data_set[i].append(sample.swapaxes(1,0))
 
     return data_set
