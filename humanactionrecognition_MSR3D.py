@@ -38,7 +38,6 @@ def load_txt_data(path):
     frame=int(skelet.shape[0]/n_joint)
     skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
-    skelet=skelet.swapaxes(1,2)
     return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
@@ -68,13 +67,14 @@ def resize(diff_feature):
     return sample
 # 使用其余点减去中心点的距离
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
-    feature=skelet.swapaxes(1,2)
+    feature=skelet
     for i in range(feature.shape[1]):
         feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
     im=np.delete(feature,2,axis=0)
     factor=max_diff_channal(im)
     for i in range(im.shape[2]):
         im[:,:,i]=Normalize(im[:,:,i],factor)
+    im.swapaxes(0,1)
     sample=resize(im)
     return sample
 
