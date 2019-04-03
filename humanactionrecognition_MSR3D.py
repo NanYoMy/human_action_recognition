@@ -270,6 +270,7 @@ for epi in range(n_test_episodes):
         #print("lenth {:.5f}".format(len(test_i_class)))
         #print(y_one_hot_sess)
         i_ls, i_acc = sess.run([ce_loss, acc], feed_dict={x: support, q: query_i, y: labels_i})
+        print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
         ac+=i_acc
         ls+=i_ls
     avg_acc += ac
