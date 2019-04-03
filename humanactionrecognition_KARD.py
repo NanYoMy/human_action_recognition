@@ -41,13 +41,13 @@ def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     return tf.reduce_mean(tf.square(query - prototype), axis=2)
 
 def load_txt_data(path):
-    skelet = np.genfromtxt(path, delimiter=" ", dtype=np.float32)#1080 * 4
+    skelet = np.loadtxt(path, delimiter=" ", dtype=np.float32)
+    skelet=skelet/1000
     frame=int(skelet.shape[0]/n_joint)
-    skelet=skelet.reshape(n_joint,frame,3)
-    skelet=skelet.swapaxes(1,2)
-    skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
-    skelet[:, :, 1] = skelet[:, :, 1] - skelet[:, :,1].mean()
-    skelet[:, :, 2] = skelet[:, :, 2] - skelet[:, :, 2].mean()
+    skelet=skelet.reshape(frame,n_joint,3)
+    # skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
+    # skelet[:, :, 1] = skelet[:, :, 1] - skelet[:, :,1].mean()
+    # skelet[:, :, 2] = skelet[:, :, 2] - skelet[:, :, 2].mean()
     return skelet
 def Normalize(data,factor):
     m = np.mean(data)
@@ -68,10 +68,11 @@ def resize(diff_feature):
     return sample
 # 使用其余点减去中心点的距离
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
-    feature=skelet.swapaxes(1,2)
+    feature=skelet.swapaxes(1,0)
     for i in range(feature.shape[1]):
         feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
     im=np.delete(feature,2,axis=0)
+    im=feature
     factor=max_diff_channal(im)
     for i in range(im.shape[2]):
         im[:,:,i]=Normalize(im[:,:,i],factor)
@@ -82,15 +83,15 @@ def ouput_3_gray_imge(diff_feature,path):
     print(prename)
     x_im=diff_feature[:, :, 0]*255
     im = Image.fromarray(x_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton3\\realworld\\x_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton3\\screen\\x_%s.bmp") % (prename))
 
     y_im=diff_feature[:, :, 1]*255
     im = Image.fromarray(y_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton3\\realworld\\y_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton3\\screen\\y_%s.bmp") % (prename))
 
     z_im=diff_feature[:, :, 2]*255
     im = Image.fromarray(z_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton3\\realworld\\z_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton3\\screen\\z_%s.bmp") % (prename))
 
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
@@ -194,7 +195,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
-data_addr = sorted(glob.glob('.\\data\\Skeleton3\\realworld\\*.txt'))# all data
+data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)#(10, 32, 60, 40, 3)
 print(test_dataset.shape)#(10, 32, 60, 40, 3)
