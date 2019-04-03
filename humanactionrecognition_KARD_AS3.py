@@ -27,7 +27,7 @@ n_test_way = n_way
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_height,im_width,  channels = 15,80, 3
+im_height,im_width,  channels = 20,80, 3
 h_dim = 8
 z_dim = 64
 def euclidean_distance(query=None, prototype=None): # a是query b是prototype
@@ -161,7 +161,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
-        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
