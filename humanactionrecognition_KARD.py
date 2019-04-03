@@ -65,6 +65,7 @@ def resize(diff_feature):
     sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_width, im_height), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
+
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
     feature=skelet.swapaxes(1,0)
     for i in range(feature.shape[1]):
