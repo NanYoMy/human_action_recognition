@@ -15,7 +15,7 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=15
-n_episodes = 100
+n_episodes = 80
 n_classes=18
 n_sample_per_class=30
 n_way = 8
@@ -165,7 +165,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
-        net = tf.layers.max_pooling2d(net, [2, 2], strides=[2, 2])
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
 
