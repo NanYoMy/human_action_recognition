@@ -70,7 +70,7 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
     for i in range(feature.shape[1]):
         feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
     im=np.delete(feature,2,axis=0)
-    im=feature
+
     factor=max_diff_channal(im)
     for i in range(im.shape[2]):
         im[:,:,i]=Normalize(im[:,:,i],factor)
