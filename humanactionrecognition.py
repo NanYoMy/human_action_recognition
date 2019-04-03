@@ -27,7 +27,7 @@ n_test_way = n_classes
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_width, im_height, channels = 40, 60, 3
+im_height,im_width,  channels = 40, 60, 3
 h_dim = 8
 z_dim = 64
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
@@ -55,10 +55,10 @@ def max_diff_channal(feature):
     return diff.max()
 # 使用其余点减去中心点的距离
 def resize(diff_feature):
-    sample=np.zeros([im_width,im_height,3])
-    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_width, im_height), mode='reflect', anti_aliasing=True)
+    sample=np.zeros([im_height,im_width,3])
+    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_height,im_width), mode='reflect', anti_aliasing=True)
+    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], (im_height,im_width ), mode='reflect', anti_aliasing=True)
+    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_height,im_width ), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
@@ -96,7 +96,7 @@ def getall(data_addr,n_classes,offset=0):
         j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet)
         #ouput_3_gray_imge(sample, addr)
-        data_set[i,j]=sample.swapaxes(1,0)
+        data_set[i,j]=sample
     return data_set
 def prepar_data(data_addr,n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
