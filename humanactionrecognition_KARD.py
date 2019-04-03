@@ -16,7 +16,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_joint=15
 n_epochs = 20
-n_episodes = 150
+n_episodes = 80
 n_classes=18
 n_sample_per_class=30
 n_way = n_classes
@@ -101,7 +101,7 @@ def getall(data_addr,n_classes,offset=0):
         i=int(token[0][1:])-1-offset#class
         j=(int(token[1][1:])-1)*3+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet,8)
-        ouput_3_gray_imge(sample,addr)
+        #ouput_3_gray_imge(sample,addr)
         data_set[i,j]=sample.swapaxes(1,0)
     return data_set
 def prepar_data(data_addr,n_classes):
