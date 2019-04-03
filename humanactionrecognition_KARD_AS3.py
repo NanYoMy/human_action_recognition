@@ -144,6 +144,9 @@ def encoder(x, h_dim, z_dim,reuse=False):
         block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
+
+
+
         # ---------#
         net = tf.concat([block_3_out,block_2_out, block_1_out, block_1_in], axis=3)
         # block_4_out = tf.layers.conv2d(block_4_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2], padding='SAME')
