@@ -28,7 +28,7 @@ n_test_way = n_classes
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_width, im_height, channels = 15, 80, 3
+im_height,im_width,  channels = 15,80, 3
 h_dim = 8
 z_dim = 64
 def euclidean_distance(query=None, prototype=None): # a是query b是prototype
@@ -59,10 +59,10 @@ def max_diff_channal(feature):
     return diff.max()
 # 使用其余点减去中心点的距离
 def resize(diff_feature):
-    sample=np.zeros([im_width,im_height,3])
-    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_width, im_height), mode='reflect', anti_aliasing=True)
+    sample=np.zeros([im_height,im_width,3])
+    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_height,im_width ), mode='reflect', anti_aliasing=True)
+    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], ( im_height,im_width), mode='reflect', anti_aliasing=True)
+    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_height,im_width ), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
 
@@ -100,7 +100,7 @@ def getall(data_addr,n_classes,offset=0):
         j=(int(token[1][1:])-1)*3+int(token[2][1:])-1#id
         sample=get_diff_feature(skelet,8)
         #ouput_3_gray_imge(sample,addr)
-        data_set[i,j]=sample.swapaxes(1,0)
+        data_set[i,j]=sample
     return data_set
 def prepar_data(data_addr,n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
@@ -120,29 +120,13 @@ def prepar_data(data_addr,n_classes):
                 test_data_set[i, itr_test] = all_data_set[i, j]
                 itr_test += 1
     return test_data_set,train_data_set
-def conv_block(inputs, out_channels, name='conv'):
-    with tf.variable_scope(name):
-        conv = tf.layers.conv2d(inputs, out_channels, kernel_size=[3,6], padding='SAME')#64 filters, each filter will generate a feature map.
-        conv = tf.contrib.layers.batch_norm(conv, updates_collections=None, decay=0.99, scale=True, center=True)
-        conv = tf.nn.relu(conv)
-        # conv = tf.contrib.layers.max_pool2d(conv, 2)
-        # conv = tf.layers.max_pooling2d(conv, [1, 2], strides=[1,2])
-        return conv
-def encoder2(x, h_dim, z_dim, reuse=False):
-    with tf.variable_scope('encoder', reuse=reuse):
-        net = conv_block(x, h_dim, name='conv_1')
-        net = conv_block(net, h_dim, name='conv_2')
-        net = conv_block(net, h_dim, name='conv_3')
-        net = conv_block(net, z_dim, name='conv_4')
-        net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-        return net
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
 
-        block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 3],padding='SAME')
+        block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 4], dilation_rate=[2, 3],padding='SAME')
         block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 3],padding='SAME')  # 64 filters, each filter will generate a feature map.
         block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
         block_1_out = tf.nn.relu(block_1_out)
@@ -150,14 +134,14 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
         #---------#
         block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
-        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[1, 3],padding='SAME')
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 4], dilation_rate=[1, 3],padding='SAME')
         block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_2_out = tf.nn.relu(block_2_out)
         #---------#
 
         #---------#
         block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
-        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[1, 3],padding='SAME')
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 4], dilation_rate=[1, 3],padding='SAME')
         block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
@@ -177,26 +161,26 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
 
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
-
+        net = tf.layers.max_pooling2d(net, [2,3],strides=[2,3])
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
-
-        net = tf.layers.max_pooling2d(net, [2, 6], strides=2)
+        net = tf.layers.max_pooling2d(net, [2,3],strides=[2,3])
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
 
 data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
-print(train_dataset.shape)#(10, 32, 60, 40, 3)
-print(test_dataset.shape)#(10, 32, 60, 40, 3)
+print(train_dataset.shape)
+print(test_dataset.shape)
 
 x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
 q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
