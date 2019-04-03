@@ -42,7 +42,7 @@ def euclidean_distance(query=None, prototype=None): # a是query b是protypical
 
 def load_txt_data(path):
     skelet = np.loadtxt(path, delimiter=" ", dtype=np.float32)
-    skelet=skelet/1000
+    skelet=skelet
     frame=int(skelet.shape[0]/n_joint)
     skelet=skelet.reshape(frame,n_joint,3)
     # skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
