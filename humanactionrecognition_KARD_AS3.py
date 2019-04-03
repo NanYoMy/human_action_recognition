@@ -22,7 +22,7 @@ n_way = 8
 n_support = 5
 n_query = 5
 #test setting
-n_test_episodes = 1000
+n_test_episodes = 300
 n_test_way = n_way
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
@@ -155,7 +155,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
-        net = tf.layers.max_pooling2d(net, [1,3],strides=[1, 3])
+        net = tf.layers.max_pooling2d(net, [2,3],strides=[2, 3])
         net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
@@ -165,7 +165,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
-        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        net = tf.layers.max_pooling2d(net, [1, 3], strides=[1, 3])
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
 
