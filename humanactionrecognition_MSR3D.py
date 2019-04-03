@@ -36,7 +36,7 @@ def load_txt_data(path):
 
     skelet = np.loadtxt(path, delimiter=" ", dtype=np.float32)#1080 * 4
     frame=int(skelet.shape[0]/n_joint)
-    skelet=skelet.reshape(n_joint,frame,4)
+    skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
     skelet=skelet.swapaxes(1,2)
     return skelet
@@ -252,10 +252,7 @@ for epi in range(n_test_episodes):
         #y_one_hot_sess=sess.run([y_one_hot],feed_dict={x: support, q: query_i,y:labels_i})
         #print("lenth {:.5f}".format(len(test_i_class)))
         #print(y_one_hot_sess)
-        i_ls, i_acc,i_dists,y_one_hot_i = sess.run([ce_loss, acc,dists,y_one_hot], feed_dict={x: support, q: query_i, y: labels_i})
-        print('[ loss_i: {:.5f}, acc_i: {:.5f} '.format(i_ls, i_acc))
-        print(i_dists)
-        print(y_one_hot_i)
+        i_ls, i_acc = sess.run([ce_loss, acc], feed_dict={x: support, q: query_i, y: labels_i})
         ac+=i_acc
         ls+=i_ls
     avg_acc += ac
