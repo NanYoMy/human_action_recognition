@@ -15,16 +15,16 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=15
-n_epochs = 20
-n_episodes = 150
+n_epochs = 80
+n_episodes = 20
 n_classes=18
 n_sample_per_class=30
-n_way = n_classes
+n_way = 8
 n_support = 5
 n_query = 5
 #test setting
 n_test_episodes = 1000
-n_test_way = n_classes
+n_test_way = n_way
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
@@ -120,22 +120,6 @@ def prepar_data(data_addr,n_classes):
                 test_data_set[i, itr_test] = all_data_set[i, j]
                 itr_test += 1
     return test_data_set,train_data_set
-def conv_block(inputs, out_channels, name='conv'):
-    with tf.variable_scope(name):
-        conv = tf.layers.conv2d(inputs, out_channels, kernel_size=[3,6], padding='SAME')#64 filters, each filter will generate a feature map.
-        conv = tf.contrib.layers.batch_norm(conv, updates_collections=None, decay=0.99, scale=True, center=True)
-        conv = tf.nn.relu(conv)
-        # conv = tf.contrib.layers.max_pool2d(conv, 2)
-        # conv = tf.layers.max_pooling2d(conv, [1, 2], strides=[1,2])
-        return conv
-def encoder2(x, h_dim, z_dim, reuse=False):
-    with tf.variable_scope('encoder', reuse=reuse):
-        net = conv_block(x, h_dim, name='conv_1')
-        net = conv_block(net, h_dim, name='conv_2')
-        net = conv_block(net, h_dim, name='conv_3')
-        net = conv_block(net, z_dim, name='conv_4')
-        net = tf.contrib.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-        return net
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
@@ -226,12 +210,12 @@ train_op = tf.train.AdamOptimizer().minimize(ce_loss)
 sess = tf.InteractiveSession()
 init_op = tf.global_variables_initializer()
 sess.run(init_op)
-AS1=np.array([0,2,11,14,18,8,13,5])
+AS3=np.array([6,15,16,14,10,7,4,0])
 for epi in range(n_episodes):
     '''
     随机产生一个数组，包含0-n_classes,取期中n_way个类
     '''
-    epi_classes = np.random.permutation(n_classes)[:n_way]  # n_way表示类别
+    epi_classes = np.random.permutation(AS3)[:n_way]  # n_way表示类别
     support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
     query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
@@ -254,7 +238,7 @@ print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
-    epi_classes = np.random.permutation(n_classes)[:n_test_way]
+    epi_classes = np.random.permutation(AS3)[:n_test_way]
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
