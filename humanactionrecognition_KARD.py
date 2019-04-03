@@ -16,7 +16,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_joint=15
 n_epochs = 20
-n_episodes = 80
+n_episodes = 150
 n_classes=18
 n_sample_per_class=30
 n_way = n_classes
@@ -31,9 +31,7 @@ n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query
 im_width, im_height, channels = 15, 80, 3
 h_dim = 8
 z_dim = 64
-def euclidean_distance(query=None, prototype=None): # a是query b是protypical
-    # a.shape = Class_Number*Query x D
-    # b.shape = Class_Number x D
+def euclidean_distance(query=None, prototype=None): # a是query b是prototype
     N, D = tf.shape(query)[0], tf.shape(query)[1]
     M = tf.shape(prototype)[0]
     query = tf.tile(tf.expand_dims(query, axis=1), (1, M, 1))

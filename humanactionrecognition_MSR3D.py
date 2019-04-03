@@ -38,7 +38,7 @@ def load_txt_data(path):
 
     skelet = np.genfromtxt(path, delimiter="  ", dtype=np.float32)#1080 * 4
     frame=int(skelet.shape[0]/n_joint)
-    skelet=skelet.reshape(n_joint,frame,4)
+    skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
     skelet=skelet.swapaxes(1,2)
     skelet[:,:, 1] = 400 - skelet[:,:, 1]
