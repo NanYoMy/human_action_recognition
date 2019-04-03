@@ -48,7 +48,7 @@ def load_txt_data(path):
     # skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
     # skelet[:, :, 1] = skelet[:, :, 1] - skelet[:, :,1].mean()
     # skelet[:, :, 2] = skelet[:, :, 2] - skelet[:, :, 2].mean()
-    return skelet
+    return skelet/1000
 def Normalize(data,factor):
     m = np.mean(data)
     mx = data.max()
