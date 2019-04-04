@@ -26,10 +26,8 @@ n_support = 4
 n_query = 4
 #test setting
 n_test_episodes = 1000
-n_test_sample=8
 n_test_way = n_classes
 n_test_support = n_support
-
 
 im_width, im_height, channels = 40, 60, 3
 h_dim = 8
@@ -38,9 +36,10 @@ def load_txt_data(path):
 
     skelet = np.genfromtxt(path, delimiter="  ", dtype=np.float32)#1080 * 4
     frame=int(skelet.shape[0]/n_joint)
-    skelet=skelet.reshape(n_joint,frame,4)
+    skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
-    skelet=skelet.swapaxes(1,2)
+    skelet[:,:, 1] = 400 - skelet[:,:, 1]
+    skelet[:,:, 2] = skelet[:,:, 2] / 4
     return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
@@ -70,7 +69,7 @@ def resize(diff_feature):
     return sample
 # 使用其余点减去中心点的距离
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
-    feature=skelet.swapaxes(1,2)
+    feature=skelet.swapaxes(1,0)
     for i in range(feature.shape[1]):
         feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
     im=np.delete(feature,2,axis=0)
@@ -79,33 +78,52 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+def ouput_3_gray_imge(diff_feature,path):
+    prename = path.split('\\')[-1]
+    print(prename)
+    x_im=diff_feature[:, :, 0]*255
+    im = Image.fromarray(x_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\x_%s.bmp") % (prename))
+
+    y_im=diff_feature[:, :, 1]*255
+    im = Image.fromarray(y_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\y_%s.bmp") % (prename))
+
+    z_im=diff_feature[:, :, 2]*255
+    im = Image.fromarray(z_im.astype(np.uint8))
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\z_%s.bmp") % (prename))
 
 def getall(data_addr,n_classes,offset=0):
     data_set={}
-    for j in range(len(data_addr)):
-        skelet = load_txt_data(data_addr[j])# skelet是numpy的ndarray类型
-        token = data_addr[j].split('\\')[-1].split('_')
+    for addr in data_addr:
+        skelet = load_txt_data(addr)# skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:])-1
         data_class=data_set.get(i)
         if not data_class:
             data_set[i]=list()
         sample=get_diff_feature(skelet)
+        ouput_3_gray_imge(sample,addr)
         data_set[i].append(sample.swapaxes(1,0))
 
     return data_set
 def prepar_data(data_addr,n_classes):
     all_data_set=getall(data_addr, n_classes)
-    print(all_data_set.keys())#所有的类应该为20
+    all_data_set.keys()#所有的类应该为20
     train_data=np.zeros([n_classes,n_query+n_support,im_height, im_width, 3], dtype=np.float32)
-    test_data = np.zeros([n_classes,n_test_sample , im_height, im_width, 3], dtype=np.float32)
+    test_data={}
     for i in all_data_set.keys():
-        class_data=all_data_set[i]
+        class_data=all_data_set.get(i)
         random.shuffle(class_data)
-        for j in range(n_test_sample+n_query+n_support):
+        length=len(class_data)
+        train_i_data=list()
+        test_i_data=list()
+        for j in range(length):
             if j<n_query+n_support:
-                train_data[i,j]=class_data[j]#直接构成数组
+                train_data[i-1,j]=class_data[j]#直接构成数组
             else:
-                test_data[i,j-n_query-n_support]=class_data[j]
+                test_i_data.append(class_data[j])#由于样本数量不固定，用hashb表
+        test_data[i]=test_i_data
     return  test_data,train_data
 
 def encoder(x, h_dim, z_dim,reuse=False):
@@ -161,7 +179,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
 data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\*.txt'))# all data
 test_dataset,train_dataset=prepar_data(data_addr, n_classes)
 print(train_dataset.shape)
-print(test_dataset.shape)
+
 
 x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
 q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
@@ -218,24 +236,43 @@ for epi in range(n_episodes):
     #if (epi + 1) %50 == 0:
     print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
 
+
 print('Testing normal classes...')
 avg_acc = 0.
 avg_ls=0.
 for epi in range(n_test_episodes):
+    print("epi============================================{}".format(epi))
     epi_classes = np.random.permutation(n_classes)[:n_test_way]
     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-    query = np.zeros([n_test_way, n_test_sample, im_height, im_width,channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
-
-        selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取s,upport样本
-        selected_query = np.random.permutation(n_test_sample)#8个样本
+        selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
+        test_data=test_dataset.get(epi_cls)
         support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-        query[i] = test_dataset[epi_cls, selected_query]
-    # support = np.expand_dims(support, axis=-1)
-    # query = np.expand_dims(query, axis=-1)
-    labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_sample)).astype(np.uint8)
-    ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
-
+        #query[i] = test_dataset[epi_cls, selected_query]
+    #由于每个类别中的测试样本数目不一致，所以用集合的方式来处理
+    ac=0
+    ls=0
+    for i in test_dataset.keys():
+        test_i_class=test_dataset.get(i)
+        #print(len(test_i_class))
+        one_hot_index=0
+        for j, epi_cls in enumerate(epi_classes):
+            if epi_cls==i:
+                one_hot_index=j
+                break
+        #说明在这次random结果当中，
+        query_i = np.zeros([1, len(test_i_class), im_height, im_width, channels], dtype=np.float32)
+        for k in range(len(test_i_class)):
+            query_i[0,k]=test_i_class[k]
+        tmp=np.array([one_hot_index])
+        labels_i = np.tile(tmp[:, np.newaxis], (1, len(test_i_class))).astype(np.uint8)#label取值有问题
+        #y_one_hot_sess=sess.run([y_one_hot],feed_dict={x: support, q: query_i,y:labels_i})
+        #print("lenth {:.5f}".format(len(test_i_class)))
+        #print(y_one_hot_sess)
+        i_ls, i_acc = sess.run([ce_loss, acc], feed_dict={x: support, q: query_i, y: labels_i})
+        print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
+        ac+=i_acc
+        ls+=i_ls
     avg_acc += ac
     avg_ls+=ls
     if (epi+1) % 50 == 0:
@@ -243,8 +280,6 @@ for epi in range(n_test_episodes):
 avg_acc /= n_test_episodes
 avg_ls/=n_test_episodes
 print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
-
-
 
 '''
 #， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取， 完成
