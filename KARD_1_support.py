@@ -3,6 +3,9 @@ KARD.n_classes=18
 KARD.is_sub_set=False
 KARD.n_way=KARD.n_classes
 KARD.n_episodes=150
+KARD.n_query=9
+KARD.n_support=1
+KARD.n_test_support=1
 KARD.train_test()
 
 #下面的一个代码参考，maxpool对整体的精度有很大的影响
