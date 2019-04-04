@@ -55,7 +55,7 @@ def Normalize(data,factor):
     m = np.mean(data)
     mx = data.max()
     mn = data.min()
-    return (data - mn) / factor
+    return (data - mn) / factor    # mx-mn
 def max_diff_channal(feature):
     diff=np.zeros([3])
     for i in range(feature.shape[2]):
