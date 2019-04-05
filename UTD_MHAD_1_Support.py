@@ -23,5 +23,5 @@ n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query
 UTD_MHAD.n_support=1
 UTD_MHAD.n_query=7
 UTD_MHAD.n_test_support=UTD_MHAD.n_support
-
+UTD_MHAD.n_episodes=300
 UTD_MHAD.train_test()
