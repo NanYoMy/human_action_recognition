@@ -167,8 +167,24 @@ def encoder(x, h_dim, z_dim,reuse=False):
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
+def print_setting():
+
+    print("n_sample_per_class=%d"%n_sample_per_class)
+    print("<==========train============>")
+
+    print("n_way=%d"%n_way)
+    print("n_shot=%d" % n_support)
+    print("n_query=%d" %n_query)
+    print("<==========test=============>")
+
+    print("n_test_way=%d" %n_test_way)
+    print("n_test_shot=%d" % n_test_support)
+    print("n_test_query=%d" %n_test_query)
+
+
 def train_test():
-    print("test_support:%d"%(n_test_support))
+    print_setting()
+
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
     test_dataset,train_dataset=prepar_data(data_addr, n_classes)
     print(train_dataset.shape)#(10, 32, 60, 40, 3)
@@ -234,7 +250,7 @@ def train_test():
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
+            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]

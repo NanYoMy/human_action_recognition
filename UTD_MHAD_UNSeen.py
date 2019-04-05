@@ -15,21 +15,25 @@ training:利用类编号为1-10的样本,使用5个support样本，利用5个que
 inference:利用类编号为11-27的样本,使用5个support样本，利用27个query,对模型进行评估，
 '''
 # train setting
-n_epochs = 10
-n_episodes = 2500
-n_train_classes = 10
+
+
+
 n_sample_per_class = 32
 
+#training
+n_episodes = 2500
+n_train_classes = 10
 n_way = 5
-n_shot = 5
+n_support = 5
 n_query = 5
 
 # test setting
 n_test_episodes = 1500
-n_test_way = 10
 n_test_classes = 17
-n_test_shot = 5
+n_test_way = 10
+n_test_support = 5
 n_test_query = 27  # n_test_shot+n_test_query<=32
+
 
 im_height,im_width,  channels = 40, 60, 3
 h_dim = 8
@@ -156,8 +160,23 @@ def prepar_data(data_addr, n_classes, offset=0):
         # a.show()
     return train_data_set
 
+def print_setting():
+
+    print("n_sample_per_class=%d"%n_sample_per_class)
+    print("<==========train============>")
+    print("n_train_classes=%d"%n_train_classes)
+    print("n_way=%d"%n_way)
+    print("n_shot=%d" % n_support)
+    print("n_query=%d" %n_query)
+    print("<==========test=============>")
+    print("n_test_classes=%d" %n_test_classes)
+    print("n_test_way=%d" %n_test_way)
+    print("n_test_shot=%d" % n_test_support)
+    print("n_test_query=%d" %n_test_query)
+
+
 def train_test():
-    print("n_train_way:%d, n_test_way:%d"%(n_way,n_test_way))
+    print_setting()
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\traindataset\\*.mat'))
     train_dataset = prepar_data(data_addr, n_train_classes)
     print(train_dataset.shape)  # (10, 32, 60, 40, 3)
@@ -203,7 +222,7 @@ def train_test():
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
         epi_classes = np.random.permutation(n_train_classes)[:n_way]  # n_way表示类别
-        support = np.zeros([n_way, n_shot, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
+        support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
         query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
             '''
@@ -212,9 +231,9 @@ def train_test():
             '''
             # selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
             # only 10 sample will used to train the model
-            selected = np.random.permutation(n_shot + n_query)[:n_shot + n_query]
-            support[i] = train_dataset[epi_cls, selected[:n_shot]]
-            query[i] = train_dataset[epi_cls, selected[n_shot:]]
+            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            support[i] = train_dataset[epi_cls, selected[:n_support]]
+            query[i] = train_dataset[epi_cls, selected[n_support:]]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
@@ -243,12 +262,12 @@ def train_test():
     avg_ls = 0.
     for epi in range(n_test_episodes):
         epi_classes = np.random.permutation(n_test_classes)[:n_test_way]
-        support = np.zeros([n_test_way, n_test_shot, im_height, im_width, channels], dtype=np.float32)
+        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         query = np.zeros([n_test_way, n_test_query, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
-            selected = np.random.permutation(n_sample_per_class)[:n_test_shot + n_test_query]
-            support[i] = test_dataset[epi_cls, selected[:n_test_shot]]
-            query[i] = test_dataset[epi_cls, selected[n_test_shot:]]
+            selected = np.random.permutation(n_sample_per_class)[:n_test_support + n_test_query]
+            support[i] = test_dataset[epi_cls, selected[:n_test_support]]
+            query[i] = test_dataset[epi_cls, selected[n_test_support:]]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
