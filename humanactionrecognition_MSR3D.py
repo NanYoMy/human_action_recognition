@@ -29,7 +29,7 @@ n_test_episodes = 1000
 n_test_way = n_classes
 n_test_support = n_support
 
-im_width, im_height, channels = 40, 60, 3
+im_height,im_width,  channels = 20, 60, 3
 h_dim = 8
 z_dim = 64
 def load_txt_data(path):
@@ -38,8 +38,8 @@ def load_txt_data(path):
     frame=int(skelet.shape[0]/n_joint)
     skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
-    skelet[:,:, 1] = 400 - skelet[:,:, 1]
-    skelet[:,:, 2] = skelet[:,:, 2] / 4
+    # skelet[:,:, 1] = 400 - skelet[:,:, 1]
+    # skelet[:,:, 2] = skelet[:,:, 2] / 4
     return skelet
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
     # a.shape = Class_Number*Query x D
@@ -62,10 +62,10 @@ def max_diff_channal(feature):
     return diff.max()
 # 使用其余点减去中心点的距离
 def resize(diff_feature):
-    sample=np.zeros([im_width,im_height,3])
-    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], (im_width, im_height), mode='reflect', anti_aliasing=True)
-    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_width, im_height), mode='reflect', anti_aliasing=True)
+    sample=np.zeros([im_height,im_width,3])
+    sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_height,im_width ), mode='reflect', anti_aliasing=True)
+    sample[:, :, 1] = transform.resize(diff_feature[:, :, 1], (im_height,im_width ), mode='reflect', anti_aliasing=True)
+    sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_height,im_width ), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
 def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
@@ -78,6 +78,14 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
+def ouput_RGB_imge(diff_feature,path):
+    rgb_image = transform.resize(diff_feature, (20, 60, 3))
+    rgb_image=rgb_image*255
+    im = Image.fromarray(rgb_image.astype(np.uint8))
+    prename = path.split('\\')[-1]
+    im.save((".\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)\\%s.bmp") % (prename))
+    print(".\\data\\Skeleton\\subdata\\%s.bmp" % (prename))
+
 def ouput_3_gray_imge(diff_feature,path):
     prename = path.split('\\')[-1]
     print(prename)
@@ -103,8 +111,8 @@ def getall(data_addr,n_classes,offset=0):
         if not data_class:
             data_set[i]=list()
         sample=get_diff_feature(skelet)
-        ouput_3_gray_imge(sample,addr)
-        data_set[i].append(sample.swapaxes(1,0))
+        ouput_RGB_imge(sample,addr)
+        data_set[i].append(sample)
 
     return data_set
 def prepar_data(data_addr,n_classes):
