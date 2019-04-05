@@ -246,7 +246,7 @@ def train_test():
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
+            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]
