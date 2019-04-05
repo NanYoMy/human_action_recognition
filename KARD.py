@@ -122,7 +122,7 @@ def prepar_data(data_addr,n_classes):
     return test_data_set,train_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
-    with tf.variable_scope('encoder', reuse=reuse):
+    with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
 
