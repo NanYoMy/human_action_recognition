@@ -35,7 +35,7 @@ n_test_support = 5
 n_test_query = 27  # n_test_shot+n_test_query<=32
 
 
-im_height,im_width,  channels = 40, 60, 3
+im_height,im_width,  channels = 20, 60, 3
 h_dim = 8
 z_dim = 16
 
@@ -180,7 +180,6 @@ def train_test():
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\traindataset\\*.mat'))
     train_dataset = prepar_data(data_addr, n_train_classes)
     print(train_dataset.shape)  # (10, 32, 60, 40, 3)
-    regularizer = tf.contrib.layers.l1_regularizer(0.0)
 
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
