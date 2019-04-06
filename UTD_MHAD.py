@@ -27,7 +27,7 @@ n_test_way = n_classes
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_height,im_width,  channels = 40, 60, 3
+im_height,im_width,  channels = 20, 60, 3
 h_dim = 8
 z_dim = 64
 def euclidean_distance(query=None, prototype=None): # a是query b是protypical
@@ -117,8 +117,58 @@ def prepar_data(data_addr,n_classes):
                 itr_test += 1
     return test_data_set,train_data_set
 
-
 def encoder(x, h_dim, z_dim,reuse=False):
+    with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
+        # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
+        #---------#
+
+        block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
+        block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
+        block_1_out = tf.nn.relu(block_1_out)
+        #---------#
+
+        #---------#
+        block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        block_2_out = tf.nn.relu(block_2_out)
+        #---------#
+
+        #---------#
+        block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        block_3_out = tf.nn.relu(block_3_out)
+        #---------#
+        # ---------#
+        net = tf.concat([block_3_out,block_2_out, block_1_out, block_1_in], axis=3)
+        # block_4_out = tf.layers.conv2d(block_4_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2], padding='SAME')
+        # # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        # block_4_out = tf.nn.relu(block_4_out)
+        # ---------#
+
+        net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [1,2],strides=[1, 2])
+        net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        #dense
+        net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
+
+        return net
+
+def encoder2(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
@@ -167,8 +217,24 @@ def encoder(x, h_dim, z_dim,reuse=False):
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
+def print_setting():
+
+    print("n_sample_per_class=%d"%n_sample_per_class)
+    print("<==========train============>")
+
+    print("n_way=%d"%n_way)
+    print("n_shot=%d" % n_support)
+    print("n_query=%d" %n_query)
+    print("<==========test=============>")
+
+    print("n_test_way=%d" %n_test_way)
+    print("n_test_shot=%d" % n_test_support)
+    print("n_test_query=%d" %n_test_query)
+
+
 def train_test():
-    print("test_support:%d"%(n_test_support))
+    print_setting()
+
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
     test_dataset,train_dataset=prepar_data(data_addr, n_classes)
     print(train_dataset.shape)#(10, 32, 60, 40, 3)
@@ -234,7 +300,7 @@ def train_test():
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_support]#从训练集合取support样本
+            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]
