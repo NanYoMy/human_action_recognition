@@ -1,6 +1,6 @@
 import numpy as np
 import  KARD
-KARD.n_episodes=70
+KARD.n_episodes=120
 KARD.is_sub_set=True
 KARD.AS=np.array([6,15,16,14,10,7,4,0])
 KARD.train_test()

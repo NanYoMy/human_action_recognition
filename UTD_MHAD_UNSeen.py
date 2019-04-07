@@ -22,7 +22,7 @@ n_sample_per_class = 32
 
 n_class=27
 #training
-n_episodes = 2500
+n_episodes = 500
 n_train_classes = 10
 n_way = 5
 n_support = 5
@@ -41,36 +41,58 @@ h_dim = 8
 z_dim = 16
 
 
-# tag 92.1
 
 
-def encoder(x, h_dim, z_dim, reuse=False):
-    with tf.variable_scope('encoder_dilated_conv', reuse=reuse):
-        # net0 = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
-        net0 = x
-        net1 = tf.layers.conv2d(net0, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],
-                                padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net1 = tf.layers.conv2d(net1, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net1 = tf.contrib.layers.batch_norm(net1, updates_collections=None, decay=0.99, scale=True, center=True)
-        # net1 = tf.nn.relu(net1)
-        # net1=tf.contrib.layers.max_pool2d(net1, 2)
-        net_concat_0_1 = tf.concat([net1, net0], axis=3)
+def encoder(x, h_dim, z_dim,reuse=False):
+    with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
+        # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
+        #---------#
 
-        net2 = tf.layers.conv2d(net_concat_0_1, h_dim * 2, kernel_size=[3, 3], dilation_rate=[2, 2], padding='SAME')
-        # net2 = tf.layers.conv2d(net2, h_dim, kernel_size=2,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net3 = tf.concat([net2, net1, net0], axis=3)
-        # net3 = tf.layers.conv2d(net3, h_dim, kernel_size=3,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net3 = tf.layers.conv2d(net3, h_dim, kernel_size=5,
-                                padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net3 = tf.contrib.layers.batch_norm(net3, updates_collections=None, decay=0.99, scale=True, center=True)
-        net3 = tf.nn.relu(net3)
-        net3 = tf.contrib.layers.max_pool2d(net3, 2)
+        block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
+        # block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
+        block_1_out = tf.nn.relu(block_1_out)
+        #---------#
 
-        # dense
-        net4 = tf.contrib.layers.flatten(
-            net3)  # tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-        return net4
+        #---------#
+        block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        # block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        block_2_out = tf.nn.relu(block_2_out)
+        #---------#
 
+        #---------#
+        block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        block_3_out = tf.nn.relu(block_3_out)
+        #---------#
+        # ---------#
+        net = tf.concat([block_3_out,block_2_out, block_1_out, block_1_in], axis=3)
+        # block_4_out = tf.layers.conv2d(block_4_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2], padding='SAME')
+        # # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
+        # block_4_out = tf.nn.relu(block_4_out)
+        # ---------#
+
+        net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [1,2],strides=[1, 2])
+        net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.nn.relu(net)
+
+        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        #dense
+        net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
+
+        return net
 
 def euclidean_distance(a, b):  # a是query b是protypical
     # a.shape = N x D
@@ -137,11 +159,11 @@ def getall(data_addr,n_classes,offset=0):
 def prepar_data(data_addr,n_classes):
 
     all_data_set=getall(data_addr, n_classes)
-    cls=np.random.permutation(n_class)
-    train_data_set=all_data_set[cls[:n_train_classes],:,:,:]
-    test_data_set=all_data_set[cls[n_train_classes:],:,:,:]
-    # train_data_set=all_data_set[np.arange(10),:,:,:]
-    # test_data_set=all_data_set[np.arange(17)+10,:,:,:]
+    # cls=np.random.permutation(n_class)
+    # train_data_set=all_data_set[cls[:n_train_classes],:,:,:]
+    # test_data_set=all_data_set[cls[n_train_classes:],:,:,:]
+    train_data_set=all_data_set[np.arange(10),:,:,:]
+    test_data_set=all_data_set[np.arange(17)+10,:,:,:]
     return test_data_set,train_data_set
 
 def print_setting():
