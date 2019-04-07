@@ -162,8 +162,8 @@ def prepar_data(data_addr,n_classes):
     # cls=np.random.permutation(n_class)
     # train_data_set=all_data_set[cls[:n_train_classes],:,:,:]
     # test_data_set=all_data_set[cls[n_train_classes:],:,:,:]
-    train_data_set=all_data_set[np.arange(10),:,:,:]
-    test_data_set=all_data_set[np.arange(17)+10,:,:,:]
+    train_data_set=all_data_set[np.arange(n_train_classes),:,:,:]
+    test_data_set=all_data_set[np.arange(n_test_classes)+n_train_classes,:,:,:]
     return test_data_set,train_data_set
 
 def print_setting():

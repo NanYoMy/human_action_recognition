@@ -24,6 +24,8 @@ n_query = 5
 #test setting
 n_test_episodes = 1000
 n_test_way = n_way
+n_train_classes=8
+n_test_classes=8
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 AS=np.array([0, 2, 11, 14, 17, 8, 13, 5])
@@ -103,22 +105,10 @@ def getall(data_addr,n_classes,offset=0):
         data_set[i,j]=sample
     return data_set
 def prepar_data(data_addr,n_classes):
-    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
-    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
-    all_data_set=getall(data_addr, n_classes)
 
-    for i in range(n_classes):
-        itr_train = 0
-        for j in range(n_sample_per_class):
-            if j%3==0:
-                train_data_set[i,itr_train]=all_data_set[i,j]
-                itr_train+=1#n_query+n_shot training sample
-    for i in range(n_classes):
-        itr_test = 0
-        for j in range(n_sample_per_class):
-            if j % 3 != 0:
-                test_data_set[i, itr_test] = all_data_set[i, j]
-                itr_test += 1
+    all_data_set=getall(data_addr, n_classes)
+    train_data_set=all_data_set[np.array([0,2,11,14,17,8,13,5]),:,:,:]
+    test_data_set=all_data_set[np.arange(n_test_classes)+n_train_classes,:,:,:]
     return test_data_set,train_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
@@ -153,17 +143,17 @@ def encoder(x, h_dim, z_dim,reuse=False):
         # ---------#
 
         net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [1,2],strides=[1, 2])
         net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        #net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
