@@ -27,8 +27,9 @@ n_test_way = n_way
 n_train_classes=8
 n_test_classes=8
 n_test_support = n_support
-n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
-AS=np.array([0, 2, 11, 14, 17, 8, 13, 5])
+n_test_query = n_sample_per_class - n_test_support#n_test_shot+n_test_query<=22
+AS_Train=np.array([0, 2, 11, 14, 17, 8, 13, 5])
+AS_Test=np.array([1,9,3,6,12,8,11,16])
 im_height,im_width,  channels = 15,80, 3
 h_dim = 8
 z_dim = 64
@@ -107,8 +108,8 @@ def getall(data_addr,n_classes,offset=0):
 def prepar_data(data_addr,n_classes):
 
     all_data_set=getall(data_addr, n_classes)
-    train_data_set=all_data_set[np.array([0,2,11,14,17,8,13,5]),:,:,:]
-    test_data_set=all_data_set[np.arange(n_test_classes)+n_train_classes,:,:,:]
+    train_data_set=all_data_set[AS_train,:,:,:]
+    test_data_set=all_data_set[AS_test,:,:,:]
     return test_data_set,train_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
@@ -201,10 +202,9 @@ def train_test():
         '''
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
-        if is_sub_set:
-            epi_classes = np.random.permutation(AS)[:n_way]  # n_way表示类别
-        else:
-            epi_classes = np.random.permutation(n_classes)[:n_way]
+
+        epi_classes = np.random.permutation(AS_Train)[:n_way]  # n_way表示类别
+
         support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
         query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
@@ -228,18 +228,16 @@ def train_test():
     avg_ls=0.
     for epi in range(n_test_episodes):
 
-        if is_sub_set:
-            epi_classes = np.random.permutation(AS)[:n_test_way]  # n_way表示类别
-        else:
-            epi_classes = np.random.permutation(n_classes)[:n_test_way]
+
+        epi_classes = np.random.permutation(AS_Test)[:n_test_way]  # n_way表示类别
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            query[i] = test_dataset[epi_cls, selected_query]
+            selected = np.random.permutation(n_sample_per_class)[:n_test_support + n_test_query]#从训练集合取support样本
+
+            support[i] = test_dataset[epi_cls, selected[:n_test_support]]#从训练集合取support样本
+            query[i] = test_dataset[epi_cls, selected[n_test_support:]]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)

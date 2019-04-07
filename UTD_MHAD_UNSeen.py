@@ -33,7 +33,7 @@ n_test_episodes = 1500
 n_test_classes = 17
 n_test_way = 10
 n_test_support = 5
-n_test_query = 27  # n_test_shot+n_test_query<=32
+n_test_query = n_sample_per_class-n_test_support  # n_test_shot+n_test_query<=32
 
 
 im_height,im_width,  channels = 20, 60, 3
