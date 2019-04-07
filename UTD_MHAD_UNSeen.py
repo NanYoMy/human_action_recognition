@@ -20,6 +20,7 @@ inference:利用类编号为11-27的样本,使用5个support样本，利用27个
 
 n_sample_per_class = 32
 
+n_class=27
 #training
 n_episodes = 2500
 n_train_classes = 10
@@ -35,32 +36,12 @@ n_test_support = 5
 n_test_query = 27  # n_test_shot+n_test_query<=32
 
 
-im_height,im_width,  channels = 40, 60, 3
+im_height,im_width,  channels = 20, 60, 3
 h_dim = 8
 z_dim = 16
 
 
 # tag 92.1
-
-def conv_block(inputs, out_channels, name='conv'):
-    with tf.variable_scope(name):
-        conv = tf.layers.conv2d(inputs, out_channels, kernel_size=4,
-                                padding='SAME')  # 64 filters, each filter will generate a feature map.
-        conv = tf.contrib.layers.batch_norm(conv, updates_collections=None, decay=0.99, scale=True, center=True)
-        conv = tf.nn.relu(conv)
-        conv = tf.contrib.layers.max_pool2d(conv, 3)
-        return conv
-
-
-def encoder__conv(x, h_dim, z_dim, reuse=False):
-    with tf.variable_scope('encoder', reuse=reuse):
-        net = conv_block(x, h_dim, name='conv_1')
-        net = conv_block(net, h_dim, name='conv_2')
-        # net = conv_block(net, h_dim, name='conv_3')
-        # net = conv_block(net, z_dim, name='conv_4')
-        net = tf.contrib.layers.flatten(
-            net)  # tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
-        return net
 
 
 def encoder(x, h_dim, z_dim, reuse=False):
@@ -142,23 +123,26 @@ def get_diff_feature(skelet, ref_point_index=3):  # 第三个点刚刚好是hip 
     sample = resize(im)
     return sample
 
-def prepar_data(data_addr, n_classes, offset=0):
-    train_data_set = np.zeros([n_classes, n_sample_per_class, im_height, im_width, 3], dtype=np.float32)
-    for j in range(len(data_addr)):
-        # print(data_addr[j])
-        skelet = load_data(data_addr[j])  # skelet是numpy的ndarray类型
-        # print(data_addr[j])
-        token = data_addr[j].split('\\')[-1].split('_')
-        i = int(token[0][1:]) - 1 - offset
-        j = (int(token[1][1:]) - 1) * 4 + int(token[2][1:]) - 1
-        sample = get_diff_feature(skelet)
-        # print("%d,%d"%(i,j))
-        train_data_set[i, j] = sample
-        # print(diff_feature)
-        # ouput_3_gray_imge(diff_feature,data_addr[j])
-        # a = AnimatedScatter(skelet,skelet.shape[2])
-        # a.show()
-    return train_data_set
+def getall(data_addr,n_classes,offset=0):
+    data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
+    for addr in data_addr:
+        skelet = load_data(addr)# skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
+        i=int(token[0][1:])-1-offset#class
+        j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
+        sample=get_diff_feature(skelet)
+        #ouput_3_gray_imge(sample, addr)
+        data_set[i,j]=sample
+    return data_set
+def prepar_data(data_addr,n_classes):
+
+    all_data_set=getall(data_addr, n_classes)
+    cls=np.random.permutation(n_class)
+    train_data_set=all_data_set[cls[:n_train_classes],:,:,:]
+    test_data_set=all_data_set[cls[n_train_classes:],:,:,:]
+    # train_data_set=all_data_set[np.arange(10),:,:,:]
+    # test_data_set=all_data_set[np.arange(17)+10,:,:,:]
+    return test_data_set,train_data_set
 
 def print_setting():
 
@@ -174,13 +158,12 @@ def print_setting():
     print("n_test_shot=%d" % n_test_support)
     print("n_test_query=%d" %n_test_query)
 
-
 def train_test():
     print_setting()
-    data_addr = sorted(glob.glob('.\\data\\Skeleton\\traindataset\\*.mat'))
-    train_dataset = prepar_data(data_addr, n_train_classes)
+    data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))
+    test_dataset,train_dataset = prepar_data(data_addr, n_class)
     print(train_dataset.shape)  # (10, 32, 60, 40, 3)
-    regularizer = tf.contrib.layers.l1_regularizer(0.0)
+    print(test_dataset.shape)  # (10, 32, 60, 40, 3)
 
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
@@ -253,9 +236,6 @@ def train_test():
     # avg_ls/=n_episodes
     # print('average acc: {:.5f}, average loss: {:.5f}'.format(avg_acc,avg_ls ))
 
-    data_addr = sorted(glob.glob('.\\data\\Skeleton\\testdataset\\*.mat'))
-    test_dataset = prepar_data(data_addr, n_test_classes, offset=10)
-    print(test_dataset.shape)  # (10, 32, 60, 40, 3)
 
     print('Testing unseen classes...')
     avg_acc = 0.
@@ -278,10 +258,5 @@ def train_test():
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
     avg_ls /= n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc, avg_ls))
+    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
 
-    '''
-    #， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取，
-    #， 测试的修改：现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
-    图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
-    '''
