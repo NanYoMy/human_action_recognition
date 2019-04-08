@@ -319,4 +319,4 @@ def load_test():
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
     avg_ls /= n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
+    print('Average loss: {:.5f} Average acc : {:.5f}'.format(avg_ls,avg_acc ))
