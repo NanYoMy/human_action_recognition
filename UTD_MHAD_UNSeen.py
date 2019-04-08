@@ -248,8 +248,8 @@ def train_test():
         _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         # avg_acc += ac
         # avg_ls += ls
-        if (epi + 1) % 50 == 0:
-            print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
+        #if (epi + 1) % 50 == 0:
+        print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
         # if ls<0.1 :
         #     print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
         #     break
