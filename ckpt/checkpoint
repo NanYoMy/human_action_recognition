@@ -1,2 +1,2 @@
-model_checkpoint_path: "KARD_AS3.py"
-all_model_checkpoint_paths: "KARD_AS3.py"
+model_checkpoint_path: "KARD_AS2.py"
+all_model_checkpoint_paths: "KARD_AS2.py"
