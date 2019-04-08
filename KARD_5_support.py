@@ -6,5 +6,5 @@ KARD.is_sub_set=False
 KARD.n_way=KARD.n_classes
 KARD.n_episodes=150
 
-KARD.train_test()
+KARD.load_test()
 
