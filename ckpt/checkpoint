@@ -1,2 +1,2 @@
-model_checkpoint_path: "UTD_MHAD_UNSeen_Tr5_In5.py"
-all_model_checkpoint_paths: "UTD_MHAD_UNSeen_Tr5_In5.py"
+model_checkpoint_path: "KARD_AS2.py"
+all_model_checkpoint_paths: "KARD_AS2.py"
