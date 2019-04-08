@@ -1,5 +1,7 @@
 import KARD_UNSeen
 import numpy as np
+import os
+KARD_UNSeen.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
 KARD_UNSeen.n_episodes=70
 KARD_UNSeen.n_way=10
 KARD_UNSeen.n_train_classes=10
