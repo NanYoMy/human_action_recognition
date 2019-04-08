@@ -18,18 +18,18 @@ n_joint=15
 n_episodes = 60
 n_classes=18
 n_sample_per_class=30
-n_way = 8
+n_way = 5
 n_support = 5
-n_query = 5
+n_query = n_sample_per_class-n_support
 #test setting
 n_test_episodes = 1000
-n_test_way = n_way
+n_test_way = 5
 n_train_classes=8
 n_test_classes=8
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_test_support#n_test_shot+n_test_query<=22
-AS_Train=np.array([0, 2, 11, 14, 17, 8, 13, 5])
-AS_Test=np.array([1,9,3,6,12,8,11,16])
+AS_Train=np.array([0,1,2,3,4,5,6,7])
+AS_Test=np.array([10,11,12,13,14,15,16,17])
 im_height,im_width,  channels = 15,80, 3
 h_dim = 8
 z_dim = 64
@@ -108,8 +108,8 @@ def getall(data_addr,n_classes,offset=0):
 def prepar_data(data_addr,n_classes):
 
     all_data_set=getall(data_addr, n_classes)
-    train_data_set=all_data_set[AS_train,:,:,:]
-    test_data_set=all_data_set[AS_test,:,:,:]
+    train_data_set=all_data_set[AS_Train,:,:,:]
+    test_data_set=all_data_set[AS_Test,:,:,:]
     return test_data_set,train_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
@@ -163,7 +163,23 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
         return net
 
+def print_setting():
+
+    print("n_sample_per_class=%d"%n_sample_per_class)
+    print("<==========train============>")
+
+    print("n_way=%d"%n_way)
+    print("n_support=%d" % n_support)
+    print("n_query=%d" %n_query)
+    print("<==========test=============>")
+
+    print("n_test_way=%d" %n_test_way)
+    print("n_test_shot=%d" % n_test_support)
+    print("n_test_query=%d" %n_test_query)
+
+
 def train_test():
+    print_setting()
     data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))# all data
     test_dataset,train_dataset=prepar_data(data_addr, n_classes)
     print(train_dataset.shape)
@@ -203,7 +219,7 @@ def train_test():
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
 
-        epi_classes = np.random.permutation(AS_Train)[:n_way]  # n_way表示类别
+        epi_classes = np.random.permutation(n_train_classes)[:n_way]  # n_way表示类别
 
         support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
         query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
@@ -221,15 +237,13 @@ def train_test():
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
 
-
-
     print('Testing normal classes...')
     avg_acc = 0.
     avg_ls=0.
     for epi in range(n_test_episodes):
 
 
-        epi_classes = np.random.permutation(AS_Test)[:n_test_way]  # n_way表示类别
+        epi_classes = np.random.permutation(n_test_classes)[:n_test_way]  # n_way表示类别
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
@@ -249,7 +263,7 @@ def train_test():
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
     avg_ls/=n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
+    print('Average loss : {:.5f} Average Test Accuracy : {:.5f}'.format(avg_ls,avg_acc))
 
     '''
     #， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取， 完成
