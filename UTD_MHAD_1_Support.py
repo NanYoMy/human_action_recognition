@@ -20,8 +20,10 @@ n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
 '''
+import os
+UTD_MHAD.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
 UTD_MHAD.n_support=1
 UTD_MHAD.n_query=7
 UTD_MHAD.n_test_support=UTD_MHAD.n_support
-UTD_MHAD.n_episodes=400
-UTD_MHAD.train_test()
+UTD_MHAD.n_episodes=150
+UTD_MHAD.load_test()

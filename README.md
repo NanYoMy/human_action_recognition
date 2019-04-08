@@ -8,7 +8,7 @@ have a good hacking time!
 
 #TODO list
 - the UTN-D.  
-- 
+- ckpt (finished)
 
 # acknowledgment
 this code is inspired by : https://github.com/abdulfatir/prototypical-networks-tensorflow

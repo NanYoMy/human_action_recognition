@@ -33,7 +33,7 @@ n_test_episodes = 1500
 n_test_classes = 17
 n_test_way = 10
 n_test_support = 5
-n_test_query = 27  # n_test_shot+n_test_query<=32
+n_test_query = n_sample_per_class-n_test_support  # n_test_shot+n_test_query<=32
 
 
 im_height,im_width,  channels = 20, 60, 3
@@ -42,7 +42,7 @@ z_dim = 16
 
 
 
-
+ckpt_path='./ckpt/untitled'
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
@@ -162,8 +162,8 @@ def prepar_data(data_addr,n_classes):
     # cls=np.random.permutation(n_class)
     # train_data_set=all_data_set[cls[:n_train_classes],:,:,:]
     # test_data_set=all_data_set[cls[n_train_classes:],:,:,:]
-    train_data_set=all_data_set[np.arange(10),:,:,:]
-    test_data_set=all_data_set[np.arange(17)+10,:,:,:]
+    train_data_set=all_data_set[np.arange(n_train_classes),:,:,:]
+    test_data_set=all_data_set[np.arange(n_test_classes)+n_train_classes,:,:,:]
     return test_data_set,train_data_set
 
 def print_setting():
@@ -187,8 +187,8 @@ def train_test():
     print(train_dataset.shape)  # (10, 32, 60, 40, 3)
     print(test_dataset.shape)  # (10, 32, 60, 40, 3)
 
-    x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
-    q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels])
+    x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='x')
+    q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='q')
 
     x_shape = tf.shape(x)
     q_shape = tf.shape(q)
@@ -196,7 +196,7 @@ def train_test():
     num_classes, num_support = x_shape[0], x_shape[1]  # num_class num_support_sample
     num_queries = q_shape[1]  # num_query_sample
     # y为label数据由外部导入
-    y = tf.placeholder(tf.int64, [None, None])
+    y = tf.placeholder(tf.int64, [None, None],name='y')
     y_one_hot = tf.one_hot(y, depth=num_classes)  # dimesion of each one_hot vector
     # emb_x是样本通过encoder之后的结果
     emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim)
@@ -209,9 +209,12 @@ def train_test():
 
     log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_classes, num_queries, -1])  # -1表示自动计算剩余维度，paper中公式2
     ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_one_hot, log_p_y), axis=-1),
-                                         [-1]))  # reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
-    acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)))
+                                         [-1]),name='loss')  # reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
+    acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)),name='acc')
     # regularization_loss = tf.reduce_sum(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
+    saver = tf.train.Saver()
+    tf.add_to_collection('acc', acc)
+    tf.add_to_collection('loss', ce_loss)
     train_op = tf.train.AdamOptimizer().minimize(ce_loss)
     sess = tf.InteractiveSession()
     init_op = tf.global_variables_initializer()
@@ -248,8 +251,8 @@ def train_test():
         _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         # avg_acc += ac
         # avg_ls += ls
-        if (epi + 1) % 50 == 0:
-            print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
+        #if (epi + 1) % 50 == 0:
+        print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
         # if ls<0.1 :
         #     print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_episodes, ls, ac))
         #     break
@@ -258,7 +261,7 @@ def train_test():
     # avg_ls/=n_episodes
     # print('average acc: {:.5f}, average loss: {:.5f}'.format(avg_acc,avg_ls ))
 
-
+    saver.save(sess, ckpt_path)
     print('Testing unseen classes...')
     avg_acc = 0.
     avg_ls = 0.
@@ -282,3 +285,38 @@ def train_test():
     avg_ls /= n_test_episodes
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
 
+def load_test():
+
+    data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))  # all data
+    test_dataset, train_dataset = prepar_data(data_addr, n_class)
+    print(test_dataset.shape)
+    sess = tf.Session()
+    saver = tf.train.import_meta_graph('%s.meta'%ckpt_path)
+    saver.restore(sess,ckpt_path)
+    graph = tf.get_default_graph()
+    x=graph.get_operation_by_name('x').outputs[0]
+    y=graph.get_operation_by_name('y').outputs[0]
+    q =graph.get_operation_by_name('q').outputs[0]
+    ce_loss=tf.get_collection('loss')[0]
+    acc=tf.get_collection('acc')[0]
+    avg_acc=0
+    avg_ls=0
+    for epi in range(n_test_episodes):
+        epi_classes = np.random.permutation(n_test_classes)[:n_test_way]
+        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
+        query = np.zeros([n_test_way, n_test_query, im_height, im_width, channels], dtype=np.float32)
+        for i, epi_cls in enumerate(epi_classes):
+            selected = np.random.permutation(n_sample_per_class)[:n_test_support + n_test_query]
+            support[i] = test_dataset[epi_cls, selected[:n_test_support]]
+            query[i] = test_dataset[epi_cls, selected[n_test_support:]]
+        # support = np.expand_dims(support, axis=-1)
+        # query = np.expand_dims(query, axis=-1)
+        labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y: labels})
+        avg_acc += ac
+        avg_ls += ls
+        if (epi + 1) % 50 == 0:
+            print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_test_episodes, ls, ac))
+    avg_acc /= n_test_episodes
+    avg_ls /= n_test_episodes
+    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
