@@ -17,4 +17,4 @@ UTD_MHAD_UNSeen.n_way=17
 UTD_MHAD_UNSeen.n_test_way=10
 UTD_MHAD_UNSeen.n_test_episodes=1000
 
-UTD_MHAD_UNSeen.train_test()
+UTD_MHAD_UNSeen.load_test()
