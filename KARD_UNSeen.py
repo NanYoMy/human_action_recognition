@@ -231,7 +231,7 @@ def train_test():
             选n_shot+n_query进行训练
             n_shot是作为参数，n_query作为训练样本
             '''
-            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            selected = np.random.permutation(n_sample_per_class)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)

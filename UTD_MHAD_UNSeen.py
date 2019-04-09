@@ -239,7 +239,7 @@ def train_test():
             '''
             # selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
             # only 10 sample will used to train the model
-            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            selected = np.random.permutation(n_sample_per_class)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         # support = np.expand_dims(support, axis=-1)
@@ -319,4 +319,4 @@ def load_test():
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
     avg_ls /= n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
+    print('Average loss: {:.5f} Average acc : {:.5f}'.format(avg_ls,avg_acc ))

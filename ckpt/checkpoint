@@ -1,2 +1,2 @@
-model_checkpoint_path: "KARD_AS2.py"
-all_model_checkpoint_paths: "KARD_AS2.py"
+model_checkpoint_path: "KARD_UNSEEN_Tr10_In8_1support.py"
+all_model_checkpoint_paths: "KARD_UNSEEN_Tr10_In8_1support.py"
