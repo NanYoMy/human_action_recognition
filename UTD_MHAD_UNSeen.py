@@ -239,7 +239,7 @@ def train_test():
             '''
             # selected = np.random.permutation(n_sample_per_class)[:n_shot + n_query]
             # only 10 sample will used to train the model
-            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            selected = np.random.permutation(n_sample_per_class)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         # support = np.expand_dims(support, axis=-1)

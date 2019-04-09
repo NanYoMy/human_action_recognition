@@ -1,2 +1,2 @@
-model_checkpoint_path: "UTD_MHAD_UNSeen_Tr10_In5.py"
-all_model_checkpoint_paths: "UTD_MHAD_UNSeen_Tr10_In5.py"
+model_checkpoint_path: "UTD_MHAD_UNSeen_Tr17_In10.py"
+all_model_checkpoint_paths: "UTD_MHAD_UNSeen_Tr17_In10.py"
