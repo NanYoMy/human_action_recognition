@@ -5,7 +5,7 @@ This folder provides all the files necessary for produce both the review and fin
 Typesetting should preferably be done using the PDFLaTeX system (part of all modern LaTeX distributions). 
 However, submissions prepared in Microsoft Word or OpenOffice will be accepted – but are discouraged. 
 
-All LaTeX class and support files are supplied in thisgit repository
+All LaTeX class and support files are supplied in this git repository
 
 Two example template LaTeX files are also provided:
 	Review example PDF : bmvc_review.pdf
