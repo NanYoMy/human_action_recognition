@@ -1,4 +1,4 @@
-function bodyinfo = read_skeleton_file(filename)
+function [bodycount_last_frame,rgb] = read_skeleton_file(filename)
 % Reads an .skeleton file from "NTU RGB+D 3D Action Recognition Dataset".
 % 
 % Argrument:
@@ -20,71 +20,36 @@ function bodyinfo = read_skeleton_file(filename)
 
 fileid = fopen(filename);
 framecount = fscanf(fileid,'%d',1); % no of the recorded frames
-
-bodyinfo=[]; % to store multiple skeletons per frame
-bodycount_last_frame=-1;
+rgb=zeros(2,25,framecount,3);
+bodycount_last_frame=1;
 for f=1:framecount
     
     bodycount = fscanf(fileid,'%d',1); % no of observerd skeletons in current frame
     
-    if bodycount_last_frame~=-1 && bodycount_last_frame~=bodycount
-        disp('changing at:');
+    if bodycount==2
         bodycount_last_frame=bodycount;
-        disp(f)
-        disp(framecount)
-        disp(filename)
-    end
-    if bodycount_last_frame==-1
-        bodycount_last_frame=bodycount;
-    end
-    
-    
+    end  
+   
     for b=1:bodycount
         clear body;
         body.bodyID = fscanf(fileid,'%ld',1); % tracking id of the skeleton
         arrayint = fscanf(fileid,'%d',6); % read 6 integers
-        body.clipedEdges = arrayint(1);
-        body.handLeftConfidence = arrayint(2);
-        body.handLeftState = arrayint(3);
-        body.handRightConfidence = arrayint(4);
-        body.handRightState = arrayint(5);
-        body.isResticted = arrayint(6);
+
         lean = fscanf(fileid,'%f',2);
-        body.leanX = lean(1);
-        body.leanY = lean(2);
+
         body.trackingState = fscanf(fileid,'%d',1);
         
         body.jointCount = fscanf(fileid,'%d',1); % no of joints (25)
         for j=1:body.jointCount
             jointinfo = fscanf(fileid,'%f',11);
-            joint=[];
+
+            joint=[jointinfo(1),jointinfo(2),jointinfo(3)];
+
+            trackingState = fscanf(fileid,'%d',1);
             
-            % 3D location of the joint j
-            joint.x = jointinfo(1);
-            joint.y = jointinfo(2);
-            joint.z = jointinfo(3);
-            
-            % 2D location of the joint j in corresponding depth/IR frame
-            joint.depthX = jointinfo(4);
-            joint.depthY = jointinfo(5);
-            
-            % 2D location of the joint j in corresponding RGB frame
-            joint.colorX = jointinfo(6);
-            joint.colorY = jointinfo(7);
-            
-            % The orientation of the joint j
-            joint.orientationW = jointinfo(8);
-            joint.orientationX = jointinfo(9);
-            joint.orientationY = jointinfo(10);
-            joint.orientationZ = jointinfo(11);
-            
-            % The tracking state of the joint j
-            joint.trackingState = fscanf(fileid,'%d',1);
-            
-            body.joints(j)=joint;
-            
+            rgb(b,j,f,:)=joint;
         end
-        bodyinfo(f).bodies(b)=body;
+        
     end
 end
 fclose(fileid);

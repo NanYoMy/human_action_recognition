@@ -1,14 +1,13 @@
-function [ output_args ] = toRGB( path )
+function [ output_args ] = toRGB(path,img )
 %UNTITLED 此处显示有关此函数的摘要
 %   此处显示详细说明
-    N_JOIN=15;
-    img=load(path);
-    img=img/1000;
-    len=size(img,1);
-    height=N_JOIN;
-    width=len/height;
-    img=reshape(img,height,width,3);
+    refindex=1;
+    ref=img(refindex,:,:);
+    img=img(:,:,:)-repmat(ref,size(img,1),1);
+    img(refindex,:,:)=[];
     
+    
+
     rmn=min(min(img(:,:,1)));
     rmx=max(max(img(:,:,1)));
     gmn=min(min(img(:,:,2)));
