@@ -20,4 +20,4 @@ UTD_MHAD_UNSeen.n_test_support=5
 UTD_MHAD_UNSeen.n_test_query=UTD_MHAD_UNSeen.n_sample_per_class-UTD_MHAD_UNSeen.n_test_support
 UTD_MHAD_UNSeen.n_test_episodes=1000
 
-UTD_MHAD_UNSeen.train_test()
+UTD_MHAD_UNSeen.load_test()
