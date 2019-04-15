@@ -27,4 +27,4 @@ UTD_MHAD.n_query=7
 UTD_MHAD.n_test_support=UTD_MHAD.n_support
 UTD_MHAD.n_episodes=150
 
-UTD_MHAD.load_test()
+UTD_MHAD.train_test()
