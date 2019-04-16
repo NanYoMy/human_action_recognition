@@ -1,15 +1,16 @@
 \documentclass{bmvc2k}
 
 %% Enter your paper number here for the review copy
-\bmvcreviewcopy{??}
+\bmvcreviewcopy{134}
 
-\title{Author Guidelines for the\\ British Machine Vision Conference}
-
+\title{ Skeleton-Based Action Recognition\\ Using Few Shot Learning}
+\usepackage{amsfonts}
+\usepackage[ruled]{algorithm2e}
 % Enter the paper's authors in order
 % \addauthor{Name}{email/homepage}{INSTITUTION_CODE}
-\addauthor{Susan Student}{http://www.vision.inst.ac.uk/~ss}{1}
-\addauthor{Petra Prof}{http://www.vision.inst.ac.uk/~pp}{1}
-\addauthor{Colin Collaborator}{colin@collaborators.com}{2}
+\addauthor{Wangbin Ding}{yomynan@gmail.com}{1}
+\addauthor{Shengqin Lin}{http://www.vision.inst.ac.uk/~pp}{2}
+\addauthor{Zhenze Dai}{b282078355@gmail.com}{2}
 
 % Enter the institutions
 % \addinstitution{Name\\Address}
@@ -24,7 +25,11 @@
  New York, USA
 }
 
-\runninghead{Student, Prof, Collaborator}{BMVC Author Guidelines}
+\runninghead{Student, Prof, Collaborator}{Wangbin Ding}
+
+\newcommand{\reffig}[1]{Figure \ref{#1}}
+\newcommand{\reftab}[1]{Table \ref{#1}}
+
 
 % Any macro definitions you would like to include
 % These are not defined in the style file, because they don't begin
@@ -42,300 +47,285 @@
 \maketitle
 
 \begin{abstract}
-This document demonstrates the format requirements for papers submitted
-to the British Machine Vision Conference.  The format is designed for
-easy on-screen reading, and to print well at one or two pages per sheet.
-Additional features include: pop-up annotations for
-citations~\cite{Authors06,Mermin89}; a margin ruler for reviewing; and a
-greatly simplified way of entering multiple authors and institutions.
+This paper presents a new skeleton-based action recognition method using a few shot learning. Consider the sequence data contain the temporal and spatial information; the proposed method encodes each of skeleton as an RGB image. Nothing more but a naïve normalization is engaged to each channel of the encoded skeleton image. In order to acquire the discriminative skeleton image feature, a serial of dilated-dense layers is adopted in our model to both extend the receptive field of feature points and capture diversity representation of the skeleton image. After that, a prototypical network is introduced to recognize the specific action of the feature stands for. The skeleton image feature will be mapped into a metric space in which action classification can be performed by the nearest neighbor search. Benefited from the nature of the few shot learning, our model can be trained with only a few labeled samples. Moreover, it could deal with the samples from unseen classes that have not presented during the training phase. We evaluated our method with the seen and unseen class of samples, experiment result shows, the method achieved comparable performance on benchmark datasets even with a few support samples.
 
-{\bf All authors are encouraged to read this document}, even if you have
-written many papers before.  As well as a description of the format, the
-document contains many instructions relating to formatting problems and
-errors that are common even in the work of authors who {\em have}
-written many papers before.
+\textbf{Index Terms:}
+skeleton sequence, dilated-dense layer, few shot learning
 \end{abstract}
 
 %-------------------------------------------------------------------------
 \section{Introduction}
 \label{sec:intro}
-From 2009, the proceedings of BMVC (the British Machine Vision
-Conference) will be published only in electronic form.  This document
-illustrates the required paper format, and includes guidelines on
-preparation of submissions.  Papers which fail to adhere to these
-requirements may be rejected at any stage in the review process.
+Human action recognition has been widely researched for a few decades. A lot of recognition methods are developed to serve for entertainment, surveillance, and video analysis. At present, the action recognition algorithm has made a great step forward by the wave of the deep learning model. However, these methods consume large-scale of training samples to capture the inner pattern of every action. As human action category is varied, the demand for training sample will explode. Besides, when new unseen actions are acceded to the classification task, the deep model need to be retrained to adapt the changing quantity of the action. A sort of few-shot (one-shot, zero-shot) learning methods are proposed to resolve these issues. Given a few of new action samples, these method can quickly accommodate the increasing new classes. Non-parameter model from nearest neighbor to metric learning [13] have played a significant role in the progress of this field. Mishra [14] present a generative framework for Zero-Shot or Few-Shot action recognition. Yang [15] introduce a new example-based action detection on the Matching Network. Nevertheless, seldom attention had been paid to apply the few shot learning model to skeleton sequence yet. To address this challenge, we propose an action recognition method based on the prototypical network. It can learns a metric space in which classification can be performed by computing distances to prototype representations of each class [19]. Because we had engaged a serial of CNN layers to extract the feature of skeleton sequence, our method also can benefit from the performance of CNN. And The main contributions of this method are:
 
-\LaTeX\ users should use this template in order to prepare their paper.
-Users of other packages should emulate the style and layout of this
-example.  Note that best results will be achieved using {\tt pdflatex},
-which is available in most modern distributions.
+1.	Only a few skeleton sequences are adequate to train an efficient action recognition model.
 
-\subsection{Paper length}
-Papers must be 9~pages in length, {\em excluding} the bibliography.
-%Length is counted from the bottom of the title on the first page.  Therefore, the
-%bibliography should begin eight lines into page ten.  This is an
-%approximate measure, intended to encourage brevity, but authors should keep
-%in mind that blatant disregard of this instruction will cause reviewers to
-%require greater originality and impact of the submission.
-{\bf Papers which are
-clearly overlength will not be reviewed}.  This includes papers where the
-margins and formatting are deemed to have been significantly altered from
-those laid down by this style guide.  The reason such papers will not be
-reviewed is that there is no provision for supervised revisions of
-manuscripts.  The reviewing process cannot determine the suitability of the
-paper for presentation in nine pages if it is reviewed in twelve.
+2.	With few support samples, it is enough to recognize the action that had never seen before.
 
-The bibliography should begin immediately after the paper text.  It may
-be of any length, within reason.  It should {\em not} include
-annotations, figures, or any other paraphernalia intended to subvert the
-paper length requirement.
+3.	Dilated-dense layer is embedded to extract the feature maps, which can enhance the robustness and diversity of the feature representation. 
 
-\begin{figure}
-\begin{tabular}{ccc}
-\bmvaHangBox{\fbox{\parbox{2.7cm}{~\\[2.8mm]
-\rule{0pt}{1ex}\hspace{2.24mm}\includegraphics[width=2.33cm]{images/eg1_largeprint.png}\\[-0.1pt]}}}&
-\bmvaHangBox{\fbox{\includegraphics[width=2.8cm]{images/eg1_largeprint.png}}}&
-\bmvaHangBox{\fbox{\includegraphics[width=5.6cm]{images/eg1_2up.png}}}\\
-(a)&(b)&(c)
-\end{tabular}
-\caption{It is often a good idea for the first figure to attempt to
-encapsulate the article, complementing the abstract.  This figure illustrates
-the various print and on-screen layouts for which this paper format has
-been optimized: (a) traditional BMVC print format; (b) on-screen
-single-column format, or large-print paper; (c) full-screen two column, or
-2-up printing. }
-\label{fig:teaser}
+The remainder of the paper is organized as follows. In Sec.2 we briefly review methods proposed to deal with skeleton-based action recognition. In Sec.3 the representation of the skeleton using dilated-dense layer is introduced. Then the inference and training algorithm of our few shot learning based model will be fully described. In Sec.4 we report the experiments results on a series of datasets to show the performance of the method. Finally, in Sec.5 we discuss research directions in the future work.
+
+
+\section{Related Work}
+From the perspective of feature representation, skeleton-based action recognition methods can be divided into three main streams. 
+The first streams usually encode the skeleton sequence into a skeleton-image. Different skeleton-image encoders are proposed to capture the feature of actions. Wang [1] introduce a compact and effective method to encode spatiotemporal information carried in 3D skeleton sequences into Joint Trajectory Maps (JTM). Pham[2] and Li[3] rearrange the pixels in RGB skeleton-images to obtain a better representation of the movement. Furthermore, Liu[4] design a skeleton visualization method to represent a skeleton sequence as a series of visual and motion enhanced color images. Having encoded skeleton sequences into skeleton images, a variety of CNN networks(CNN[1], multi-scale CNN[5], DeepResidualNeuralNetworks[2], multi-stream CNN[4]) are constructed to classify the indeed action of the skeleton image. 
+
+The second steam is inspired by the RNN network, whose recurrent structure can boil a sequence data down into a high-level understanding []. For better performance, they tend to adopt the LSTM to process the skeleton sequence data. Zhu [6] introduce an end-to-end fully connected deep LSTM network with a designed regularization, through which can learn the co-occurrence feature of the skeleton joints. Based on LSTM, Liu [7] design a skeleton tree traversal method and a new gating mechanism to achieve a robust representation of the input sequence data. To further, Liu [8] also add attention ability to the LSTM network, which is capable of focusing on the informative joints of the skeleton.
+The last one is based on graph convolutional network [9], which can be applied directly to the raw skeleton data. Shi [10] present a novel two-stream nonlocal graph convolutional network for the recognition task. Li [11] introduce multi-scale graphical convolutional kernels to encode motion variations and input state for feature extracting. Si [12] propose a novel Attention Enhanced Graph Convolutional LSTM Network, which can not only capture discriminative features in spatial configuration and temporal dynamics but also explore the co-occurrence relationship between spatial and temporal domains.
+
+\section{Proposed Method}
+\subsection*{Skeleton Image Encoder}
+It is common knowledge that a skeleton sequence can be represented as an RGB image []. Consider an n frame action $a=\{ fr^1,fr^2,\cdots fr^n\}$, each frame $fr^i$ contains $m$ joints $fr^i =\{j^i_1,j^1_2,\cdots j^i_m\} $. And each joint $j^i_t=\{j^i_{tx},j^i_{ty},j^i_{tz}\}$ is a 3-D coordinate point, which is corresponding to the RGB channel of a pixel in a skeleton image. Thus, the skeleton sequence S can be encoded as an $m\times n$ skeleton image. a sort of variant RGB encoder had proposed to achieve the translation-scale invariant representation of the skeleton sequences [4 16,17]. But our method hasn’t taken advantage of these mechanisms. Only a naive normalization, proposed by [18], is adopted.
+
+$$p'_k=floor(255*\frac{(p_k-p^{min}_k)}{\max \limits_{k}(p_k^{max}-p_k^{min})})$$
+
+Where $p^{max}_k$ and $p^{min}_k$ are the maximum and minimum value of the k-th channel (x; y; z) of a skeleton. In this way, each action sample $a$ can be encoded into a skeleton image $I$.
+\begin{figure}[htb] 
+\centering
+\includegraphics[height=1.8in]{images/Figure_1.png}
+\caption{the workflow of extracting a skeleton image from a skeleton sequence}
+\label{fig:1}	
 \end{figure}
 
-\subsection{Dual submission}
-By submitting this manuscript to BMVC, the authors assert that it has not
-been previously published in substantially similar form, and no paper
-currently under submission to a conference contains significant overlap
-with this one.  If you are in doubt about the amount of overlap, cite the
-dual submission (as described below), and argue in the body of your paper
-why this is a nontrivial advance.  A simultaneous journal submission would
-be expected to have significant additional material not in the conference
-paper, and should not be previously published, nor in the final acceptance
-stages. The conference chairs reserve the right to cancel
-submission of any paper which is found to violate these conditions.  In
-particular, {\em uncited} dual submissions will be summarily dealt with.
+\subsection*{Dilated-Dense Layers}
+\flushleft
+The learnable part of our model is the mapping function $F_W:\mathbb{R}^D\rightarrow \mathbb{R}^M$ . For the sake of processing the RGB skeleton image, we construct it as a CNN network. There are two things that we considered before build the network. One is that, unlike natural image, each pixel scattered in the image has equally interpretive meaning for the final decision, we tend to expand the size of the convolution kernel, so that is could convolve as much as pixels in the skeleton image. The other one is that, both the movement of the skeleton joints in temporal domain and the configuration of the joints in spatial space are the significate features of action. For these reasons, we considered adding dilated-dense layers, whose dilated convolution kernel could enlarge the receptive field of the feature point and the densely connected layers can lead to a rich of joints and movement feature representation. 
 
-\subsection{Anonymity and blind review}
-BMVC operates a double-blind review process.  Your review submission {\bf
-must not identify you as the author}.  This means, in particular, that the
-author list should be replaced by the words ``BMVC {\em YYYY} Submission \#
-{\em NNN}'', where the italics are to indicate the year and the submission
-number.  The provided \LaTeX\ command \verb'\bmvcreviewcopy' does this
-automatically.  In addition, acknowledgements should not be included in the
-review copy.
+\begin{figure*}[htb]
+	
+\includegraphics[scale=0.95]{images/Figure_2.png}
+\caption{Each pixel represent a skeleton joint in skeleton image. Even the pixel around the corner(A,C) has equally importance to the one(B) located in the center. While things didn’t usually happen in natural image.}
 
-Many authors misunderstand the concept of anonymizing for blind
-review.  Blind review {\bf does not mean that one must remove
-citations to one's own work}---in fact it is often impossible to
-review a paper unless the previous citations are known and
-available.
-
-Blind review means that you do not use the words ``my'' or ``our''
-when citing previous work.  That is all.  (But see below for
-techreports)
-
-Saying ``this builds on the work of Lucy Smith [1]'' does not say
-that you are Lucy Smith, it says that you are building on her
-work.  If you are Smith and Jones, do not say ``as we show in
-[7]'', say ``as Smith and Jones show in [7]'' and at the end of the
-paper, include reference 7 as you would any other cited work.
-
-An example of a bad paper:
-\begin{quote}
-\begin{center}
-    An analysis of the frobnicatable foo filter.
-\end{center}
-
-   In this paper we present a performance analysis of our
-   previous paper [1], and show it to be inferior to all
-   previously known methods.  Why the previous paper was
-   accepted without this analysis is beyond me.
-   [1] Removed for blind review
-\end{quote}
-
-
-An example of an excellent paper:
-
-\begin{quote}
-\begin{center}
-     An analysis of the frobnicatable foo filter.
-\end{center}
-
-   In this paper we present a performance analysis of the
-   paper of Smith \etal [1], and show it to be inferior to
-   all previously known methods.  Why the previous paper
-   was accepted without this analysis is beyond me.
-
-   [1] Smith, L and Jones, C. ``The frobnicatable foo
-   filter, a fundamental contribution to human knowledge''.
-   Nature 381(12), 1-213.
-\end{quote}
-
-If you are making a submission to another conference at the same time,
-which covers similar or overlapping material, you will almost certainly
-need to refer to that submission in order to explain the differences,
-just as you would if you or others had previously published related
-work.  In such cases, include the anonymized parallel
-submission~\cite{Authors06} as additional material and cite it as
-\begin{quote}
-[1] Authors. ``The frobnicatable foo filter'', ECCV 2006 Submission ID 324,
-Supplied as additional material {\tt eccv06.pdf}.
-\end{quote}
-
-Finally, you may feel you need to tell the reader that more details can be
-found elsewhere, and refer them to a technical report.  For conference
-submissions, the paper must stand on its own, and not {\em require} the
-reviewer to go to a techreport for further details.  Thus, you may say in
-the body of the paper ``further details may be found
-in~\cite{Authors06b}''.  Then submit the techreport as additional material.
-Again, you may not assume the reviewers will read this material.
-
-Sometimes your paper is about a problem which you tested using a tool which
-is widely known to be restricted to a single institution.  For example,
-let's say it's 1969, you have solved a key problem on the Apollo lander,
-and you believe that the ICLL'70 audience would like to hear about your
-solution.  The work is a development of your celebrated 1968 paper entitled
-``Zero-g frobnication: How being the only people in the world with access to
-the Apollo lander source code makes us a wow at parties'', by Zeus \etal.
-
-You can handle this paper like any other.  Don't write ``We show how to
-improve our previous work [Anonymous, 1968].  This time we tested the
-algorithm on a lunar lander [name of lander removed for blind review]''.
-That would be silly, and would immediately identify the authors. Instead
-write the following:
-\begin{quotation}
-\noindent
-   We describe a system for zero-g frobnication.  This
-   system is new because it handles the following cases:
-   A, B.  Previous systems [Zeus et al. 1968] didn't
-   handle case B properly.  Ours handles it by including
-   a foo term in the bar integral.
-
-   ...
-
-   The proposed system was integrated with the Apollo
-   lunar lander, and went all the way to the moon, don't
-   you know.  It displayed the following behaviours
-   which show how well we solved cases A and B: ...
-\end{quotation}
-As you can see, the above text follows standard scientific convention,
-reads better than the first version, and does not explicitly name you as
-the authors.  A reviewer might think it likely that the new paper was
-written by Zeus \etal, but cannot make any decision based on that guess.
-He or she would have to be sure that no other authors could have been
-contracted to solve problem B.
-
-FAQ: Are acknowledgements OK?  No.  Leave them for the final copy.
-
-\subsection{Citations}
-When citing a multi-author paper, you may save space by using ``{\em et
-alia}'', shortened to ``\etal'' (not ``{\em et.\ al.}'' as ``{\em et}'' is
-a complete word.)  The provided \verb'\etal' macro is a useful {\em aide
-memoire} in this regard.  However, use it only when there are three or more
-authors.  Thus, the following is correct: `` Frobnication has been trendy
-lately.  It was introduced by Alpher~\cite{Alpher02}, and subsequently
-developed by Alpher and Fotheringham-Smythe~\cite{Alpher03}, and Alpher
-\etal~\cite{Alpher04}.''
-
-This is incorrect: ``... subsequently developed by Alpher \etal~\cite{Alpher03} ...''
-because reference~\cite{Alpher03} has just two authors.  If you use the
-\verb'\etal' macro, then you need not worry about double periods
-when used at the end of a sentence as in Alpher \etal.
-
-%For this citation style, keep multiple citations in numerical (not
-%chronological) order, so prefer
-We use {\tt natbib}, so citations in random order are nicely sorted:
- \cite{Alpher03,Alpher02,Authors06b,Authors06}.  However, we don't use the
-compress option, as we want each reference to have its own hyperlink and
-popup window.
-
-%-------------------------------------------------------------------------
-\subsection{Footnotes}
-
-Please use footnotes\footnote {This is what a footnote looks like.  It
-often distracts the reader from the main flow of the argument.} sparingly.
-Indeed, try to avoid footnotes altogether and include necessary peripheral
-observations in
-the text (within parentheses, if you prefer, as in this sentence).  If you
-wish to use a footnote, place it at the bottom of the column on the page on
-which it is referenced. Use Times 8-point type, single-spaced.
-
-
-\begin{figure*}
-\begin{center}
-\fbox{\rule{0pt}{2in} \rule{.9\linewidth}{0pt}}
-\end{center}
-   \caption{Example of a short caption, which should be centered.}
-\label{fig:short}
+\label{fig:2}
 \end{figure*}
 
+\begin{figure*}	[htb]
+\includegraphics[scale=0.24]{images/Figure_3.png}
+\caption{CNN architecture of the mapping function $F_W$: Three dilated-dense blocks are designed to enhance the robust representation of the skeleton image. The parameter W of the mapping function is corresponding to the weights and biases of the CNN network.}
+\label{fig:3}
+\end{figure*}
+
+\subsection*{The Model}
+Given $K$ classes of labeled skeleton image samples, we randomly subsample a few of samples from each class as the support sets. The k-th support set can be defined as:
+$$S_k=I_1,I_2,\cdots I_{N_s}$$
+
+The support sets will be mapped into a metric space by the convolution layers and the prototype of k-th class $c_k$ is the mean of the mapped support samples that belong to it . \reffig{fig:1} illustrate the structure of the action recognition model.
+
+$$c_k=\frac{1}{N_s} \sum \limits_{I_i,y_i\in S_k}F_W (I_i)$$
+
+When feeding an unlabeled skeleton image $I^*$, the label of the image is decided by the nearest neighbour prototype, from whom it has the shortest distance.
+
+$$\mathop{\arg\min}_{i} \left( \lVert F_W \left( I^\ast \right) - c_i \rVert^2 \right)$$
+
+The inference phase of our model is similar to the nearest neighbor search. 
+The algorithm 1 is a brief pseudo-code of the inference phase.
+
+\begin{figure*}	[htb]
+\includegraphics[width=12.93cm,height=5.33cm]{images/Figure_4.png}
+\caption{The structure of the skeleton-based action recognition model. Sample $A^\ast$ is assigned to the class whose prototype had the shortest distance from it}
+\label{fig:4}
+\end{figure*}
+\begin{algorithm}
+\caption{ the inference process of action recognition model.}
+\KwIn{$k$ classes of support set $S=\{S^1,S^2,\cdots S^k \}$, where each class of support}
+\KwOut{the assignment of the unlabeled sample $y^*$}
+\label{alg:1}
+	\ForEach{\bf{i in K}}
+	{
+	
+	$\mathbf{I^i}=\{I^i_1,I^i_2,\cdots I^i_N\}=\mathbf{Encode}(S^i)$
+	
+	$\mathbf{F^i}=\{F^i_1,F^i_2,\cdots F^i \{ N_s \} \}=\mathbf{F_w(I^i)}$
+	
+	$\mathbf{c_i}\leftarrow mean(F^i)$
+	
+	}
+	
+	$I^\ast = \mathbf{Encode}(a^\ast) $
+	
+	$F^\ast = \mathbf{F_w}(I^\ast)$
+	
+	$y^\ast=\mathop{\mathbf{argmin}}\limits_{\mathbf{i}} \left( \lVert F_W \left( I^\ast \right) - c_i \rVert^2 \right)$
+\end{algorithm}
+
+The parameter of our model can be divided into two subsets. One is the support sets $C_{support}=\{c_1,c_2,\cdots c_K\}$it can be provided by a few labeled samples in real recognition scenarios. The other one is the parameter of the mapping function $F_W$, which can be solved via SGD optimization. The purpose of our training algorithm is to address the learnable parameter of w. The training samples are divided into support and query sets. Support sets are used to estimate the prototype of each classes. While the query sets will be mapped into metric space to adjust the learnable parameter of $F_W$. For each labeled query sample $(I^\ast,y^\ast)$, The cross-entropy loss of the prototypical model can be defined as:
+
+$$loss( y^\ast | I^\ast,C_{support},W)=\log(\frac{\exp (-d(F_W(I^\ast),c_{y^\ast}))}{\sum_{i=1}^{k}\exp((F_W(I^\ast),c_i)})$$
+
+\reffig{fig:5} illustrates the detail computation of the cross-entropy loss of the model. Having the loss function defined, the parameters can be updated via the gradient descent method on it. We optimize the parameters of the model in few shot fashion[]. For each training iteration, we randomly divided the training samples into the support and query set. With which the cross-entropy loss of the model will be calculated. A detail description of training phase is provided in algorithm 
+2.
+\begin{figure*}[htb]
+\centering
+\includegraphics{images/Figure_5.png}
+\caption{The computational graph of the model.}
+\label{fig:5}
+\end{figure*}
+
+\begin{algorithm}
+	\caption{ the training process of action recognition model.}
+	\KwIn{$k$ classes of action training set $A=\{A^1,A^2,\cdots A^k\}$, where the i-th class of training sample $A^i=\{a_1^i,a_2^i,\cdots a_N^i\}$ is labeled as $y^i$ and contains $N=N_s+N_q$ samples. $N_s$ and $N_q$ are the number of support and query sample.}
+	\KwOut{$W$}
+	\label{alg:2}
+	\bf{Init $W$}
+	
+	\ForEach{\bf{i in K}}
+	{
+		$\mathbf{I^i}=\{I^i_1,I^i_2,\cdots I^i_N\}=\mathbf{Encode}(S^i)$
+		
+		$\mathbf{F^i}=\{F^i_1,F^i_2,\cdots F^i \{ N_s \} \}=\mathbf{F_w(I^i)}$
+	}	
+			
+	\Repeat{}
+	{
+		\ForEach{\bf{i in K}}
+		{
+			$F^i_{supprot}\leftarrow RandomSample(F^i,N_s)$
+			
+			$F^i_{query}\leftarrow F^i\-- F^i_{support}$
+			
+			$c_i\leftarrow mean(F^i_{support})$
+		}
+		$C_{support}\leftarrow \{c_1,c_2,\cdots c_k\}$
+		
+		$J\leftarrow0$
+		
+		\ForEach{\bf{i in K}}
+		{
+			\ForEach{\bf{$F_{it}$ in $F^i_{query}$}}
+			{
+				
+				$J\leftarrow J+ \frac{1}{N_q*K}log\{p(y^i|F_it,C_{support},W)\}$
+			}	
+		}
+		$W^{new}\leftarrow W^{old}\-- \epsilon\bigtriangledown_W J$
+	}
+	
+	$I^\ast = \mathbf{Encode}(a^\ast) $
+	
+	$F^\ast = \mathbf{F_w}(I^\ast)$
+	
+	$y^\ast=\mathop{\mathbf{argmin}}\limits_{\mathbf{i}} \left( \lVert F_W \left( I^\ast \right) - c_i \rVert^2 \right)$
+\end{algorithm}
+
 %-------------------------------------------------------------------------
-\subsection{The ruler}
-The \LaTeX\ style defines a printed ruler which should be present in the
-version submitted for review.  The ruler is provided in order that
-reviewers may comment on particular lines in the paper without
-circumlocution.  If you are preparing a document using a non-\LaTeX\
-document preparation system, please arrange for an equivalent ruler to
-appear on the final output pages.  The presence or absence of the ruler
-should not change the appearance of any other content on the page.  The
-camera ready copy should not contain a ruler. (\LaTeX\ users may remove
-the \verb'[review]' option from the \verb'\documentclass' statement.)
-Reviewers: note that the ruler measurements do not align well with lines
-in the paper --- this turns out to be very difficult to do well when the
-paper contains many figures and equations, and, when done, looks ugly.
-Just use fractional references (e.g.\ this line is $210.5$), although in
-most cases one would expect that the approximate location ($210$ in the
-previous example) will be adequate.
+\section{Experiments}
+The whole architecture of our model is provide in \reffig{fig:4}, as mentioned before, we construction the mapping function as a serial of dilated-dense layers. The structure of network is illustrated in \reffig{fig:3}. It composed of three dilated-dense blocks, three convolution blocks and a flatten layer. We implemented our method on Tensorflow with GTX 1080 and evaluated it on two popular benchmarks. Our model requires less training examples than existing algorithm with a comparable accuracy. A reproducible piece of code is available in
+ \url{https://github.com/NanYoMy/human_action_recognition}
+
+\subsection*{UTD-MHAD}
+The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times[20]. So, we get 32 samples per action. From each type of action, we select 8 sequences as the training set, and leave out 24 samples for testing. For evaluation, we randomly generated 4 support samples per class from the training set to estimate the prototypes of the model. \reftab{tab:1} shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs a quarter of samples for training without any data augmentation mechanism [2,21], but still, we obtain an improvement of 1\% over the state-of-the-art .
 
 
-\begin{table}
-\begin{center}
-\begin{tabular}{|l|c|}
-\hline
-Method & Frobnability \\
-\hline\hline
-Theirs & Frumpy \\
-Yours & Frobbly \\
-Ours & Makes one's heart Frob\\
-\hline
-\end{tabular}
-\end{center}
-\caption{Results.   Ours is better.}
+\begin{table}[htb]
+	\begin{center}
+		\caption{ comparison of different action recognition methods on UTD-MHAD.}
+		\begin{tabular}{|c|c|}
+			\hline
+			Method & Accuracy \\
+			\hline
+			ELC-KSVD & 76.19\% \\
+			\hline
+			kinect \& Inertial & 79.10\% \\
+			\hline
+			Cov3DJ & 85.58\%\\
+			\hline
+			SOS & 86.97\% \\
+			\hline
+			JTM & 96.27\% \\
+			\hline
+			TSIIM-MSDCNN[21] & 86.97\% \\
+			\hline
+			Our Model & \bf{97.62\%} \\
+			\hline
+		\end{tabular}	
+	\end{center}	
+	\label{tab:1}
 \end{table}
 
-\subsection{Mathematics}
+\subsection*{KARD}
 
-Please number all of your sections and displayed equations.  It is
-important for readers to be able to refer to any particular equation.  Just
-because you didn't refer to it in the text doesn't mean some future reader
-might not need to refer to it.  It is cumbersome to have to use
-circumlocutions like ``the equation second from the top of page 3 column
-1''.  (Note that the ruler will not be present in the final copy, so is not
-an alternative to equation numbers).  All authors will benefit from reading
-Mermin's description~\cite{Mermin89} of how to write mathematics.
+The KARD[22] dataset contains 18 actions, performed by 10 subjects and each subject repeated each action 3 times for creating a number of 540 sequences. Following the evaluation protocol in [2], the whole dataset is divided into three subsets. For each subset, one-third samples is used for training and the rest is for testing. Furthermore, we also train our model on the whole KARD dataset. Although the output class number is increased to 18, the model still achieves 99.38\% recognition accuracy.
+
+\begin{table}[htb]
+	\begin{center}
+		\caption{ comparison of different action recognition methods on KARD. }
+		\scalebox{1.1}
+		{
+		\begin{tabular}{|c|c|c|c|}
+			\hline
+			Method & Exp1 & Exp2 & Exp3 \\
+			\hline
+			Gaglio et al. & 89.73\% & 94.50\%&88.27\%\\
+			\hline
+			Cippitelli et al.; P = 11 & 96.47\% & 98.27\% & 96.87\%\\
+			\hline
+			Ling et al. & 98.90\% & 99.60\% & 99.43\%\\
+			\hline
+			DRNN[2] & 99.87\% & 98.27\% & 96.87\%\\
+			\hline
+			\textbf{Our Model} & \textbf{99.37\%} & \textbf{99.72\%} & \textbf{99.37\%} \\
+			\hline
+			\textbf{Our Model} &  \multicolumn{3}{|c|}{\textbf{99.38\%}}\\
+			\hline
+		\end{tabular}
+		}
+	\end{center}
+	
+	\label{tab:2}
+\end{table}
+
+\subsection*{Few (one) shot action recognition}
+To investigate the performance of the model when dealing with the samples from the unseen class, we must evaluate it with the action that have not presented during the training phase. For this purpose, the all class of the dataset is split into two disjoint sets as showed in \reftab{tab:3}. Parameter of the mapping function is optimized on training set. For evaluation , we randomly select few(one) support samples per class from the testing set to estimate the prototypes of the model. And the rest testing samples are used to validate the accuracy. \reftab{tab:4} gives the performance of the model on the unseen action without retraining the parameter of the mapping function. 
+\begin{table}[htbp]
+	\begin{center}
+		\caption{ list of action in two disjoint sets (training set and testing set). }
+		
+		\begin{tabular}{|c|p{4.8cm}|p{4cm}|}
+	
+			\hline
+			  & Training Set & Testing Set  \\
+			\hline
+			UTD-MHAD & (1) right arm swipe to the left, (2) right arm swipe to the right, (3) right hand wave, (4) two hand front clap, (5) right arm throw, (6) cross arms in the chest, (7) basketball shoot, (8) right hand draw x, (9) right hand draw circle (clockwise), (10) right hand draw circle (counter clockwise), (11) draw triangle, (12) bowling (right hand), (13) front boxing, (14) baseball swing from right, (15) tennis right hand forehand swing, (16) arm curl (two arms), (17) tennis serve & (18) two hand push, (19) right hand knock on door, (20) right hand catch an object, (21) right hand pick up and throw, (22) jogging in place, (23) walking in place, (24) sit to stand, (25) stand to sit, (26) forward lunge (left foot forward), (27) squat (two arms stretch out)\\
+			\hline
+			\bfseries{KARD} & 1 Horizontal arm wave, 2 High arm wave
+			3 Two hand wave, 4 Catch Cap, 5 High throw, 6 Draw X, 7 Draw Tick, 8 Toss Paper, 9 Forward Kick, 10 Side Kick
+			 & 1 Take Umbrella, 12 Bend, 13 Hand Clap, 14 Walk, 15 Phone Call, 16 Drink, 17 Sit down, 18 Stand up \\
+			\hline
+		\end{tabular}	
+	\end{center}	
+	\label{tab:3}
+\end{table}
 
 
+\begin{table*}[htbp]
+	\begin{center}
+		\caption{ the classification accuracies of the model with different number of support samples on UTD-MHAD and KARD datasets. All accuracy result is averaged over 1000 test episodes. }
+		
+		\begin{tabular}{|c|c|c|}
+			
+			\hline
+			& UTD-MHAD & KARD\\
+			\hline
+			5 support samples & (1) 93.5\% & 95.88\% \\
+			\hline
+			1 support samples & 82.54\%
+			& 87.3\%\\
+			\hline
+		\end{tabular}	
+	\end{center}	
+	\label{tab:4}
+\end{table*}
 %-------------------------------------------------------------------------
-\subsection{References}
+\section{Conclusion}
 
-List and number all bibliographical references in 9-point Times,
-single-spaced, at the end of your paper. When referenced in the text,
-enclose the citation number in square brackets, for
-example~\cite{Authors06}.  Where appropriate, include the name(s) of
-editors of referenced books.
+We present an action recognition method based on a few shot learning. It is able to achieve a comparable performance even with a few training samples. And we also demonstrate that our method can classify the unseen actions without retrain the parameter of the model. But, the ability of the model is limited, our method cannot be applied to the long-term skeleton sequence, which may contain a different type of continue actions. In the future, we will extend our action recognition task to the segmentation of the long-term skeleton sequence based on the few shot learning.
 
 
 %------------------------------------------------------------------------
-\subsection{Color}
-
-Color is valuable, and will be visible to readers of the electronic copy.
-However ensure that, when printed on a monochrome printer, no important
-information is lost by the conversion to grayscale.
+\section{Acknowledgment}
+This work was supported in part by the Educational research projects for young and middle-aged teachers of Fujian under Grants 
 
 \bibliography{egbib}
+
 \end{document}
