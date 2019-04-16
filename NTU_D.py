@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
+import shutil
 #train setting
 '''
 training:使用4个support样本，利用4个query,对模型进行训练
@@ -98,15 +99,15 @@ def ouput_3_gray_imge(diff_feature,path):
     print(prename)
     x_im=diff_feature[:, :, 0]*255
     im = Image.fromarray(x_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\x_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton4\\data\\x_%s.bmp") % (prename))
 
     y_im=diff_feature[:, :, 1]*255
     im = Image.fromarray(y_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\y_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton4\\y_%s.bmp") % (prename))
 
     z_im=diff_feature[:, :, 2]*255
     im = Image.fromarray(z_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\z_%s.bmp") % (prename))
+    im.save((".\\data\\Skeleton4\\z_%s.bmp") % (prename))
 
 def prepar_train_data(data_addr, n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
@@ -114,26 +115,23 @@ def prepar_train_data(data_addr, n_classes):
     for addr in data_addr:
         skelet = load_data(addr)# skelet是numpy的ndarray类型
         token = addr.split('\\')[-1].split('.')[0]
-        action=int(token[12:])
+        action=int(token[17:])
         bodyA=skelet[0,:,:,:]
         bodyB=skelet[1,:,:,:]
-        imA=None
-        imB=None
         sample=None
-        if bodyA.max()>1e-6:
-            imA=get_diff_feature(bodyA,1)
-        if bodyB.max()>1e-6:
-            imB=get_diff_feature(bodyB,1)
-
         #拼接两个图像
-        if imA and imB:
+        if bodyA.max()>1e-6 and bodyB.max()>1e-6 :
+            imB = get_diff_feature(bodyB, 1)
+            imA = get_diff_feature(bodyA, 1)
             sample=resize(np.hstack(imA,imB))
-        elif imA:
-            sample=imA
+        elif bodyA.max()>1e-6:
+            sample=get_diff_feature(bodyA, 1)
+        elif bodyB.max()>1e-6 :
+            sample=get_diff_feature(bodyB, 1)
         else:
-            sample=imB
-
+            print("error")
         #根据具体的类存入到相应的位置中
+        ouput_3_gray_imge(sample,token)
         train_data_set[action,sample_index[action]]=sample
         sample_index[action]=train_data_set[action]+1
     return train_data_set
@@ -195,8 +193,22 @@ test_set=getXViewTestingAddr()
 def nextTestSample():
     pass
 
+def mymovefile(srcfile,dstfile):
+    if not os.path.isfile(srcfile):
+        print("%s not exist!"%(srcfile))
+    else:
+        fpath,fname=os.path.split(dstfile)    #分离文件名和路径
+        if not os.path.exists(fpath):
+            os.makedirs(fpath)                #创建路径
+        shutil.move(srcfile,dstfile)          #移动文件
+        print("move %s -> %s"%( srcfile,dstfile))
+
 def train_test():
-    train_data_addr=getXViewTrainingAddr()
+    # train_data_addr=getXViewTrainingAddr()
+    # for i in  train_data_addr:
+    #     tmp=i.replace("mat","mat_train")
+    #     mymovefile(i,tmp)
+    train_data_addr=glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
     train_dataset=prepar_train_data(train_data_addr, n_classes)
     print(train_dataset.shape)#(60,10, 25, 90, 3)
 
