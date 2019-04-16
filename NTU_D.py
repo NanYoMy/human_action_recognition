@@ -16,7 +16,7 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_epochs = 20
-n_episodes = 800
+n_episodes = 300
 n_classes=60
 n_way = n_classes
 n_support = 5
@@ -113,29 +113,35 @@ def prepar_train_data(data_addr, n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
     sample_index=np.zeros(60,dtype=int)
     for addr in data_addr:
-        skelet = load_data(addr)# skelet是numpy的ndarray类型
-        token = addr.split('\\')[-1].split('.')[0]
-        action_index=int(token[17:])-1
-        bodyA=skelet[0,:,:,:]
-        bodyB=skelet[1,:,:,:]
-        sample=None
-        #拼接两个图像
-        if bodyA.max()>1e-6 and bodyB.max()>1e-6 :
-            imB = get_diff_feature(bodyB, 1)
-            imA = get_diff_feature(bodyA, 1)
-            merge=np.vstack((imA,imB))
-            sample=resize(merge)
-        elif bodyA.max()>1e-6:
-            sample=get_diff_feature(bodyA, 1)
-        elif bodyB.max()>1e-6 :
-            sample=get_diff_feature(bodyB, 1)
-        else:
-            print("error")
-        #根据具体的类存入到相应的位置中
-        ouput_3_gray_imge(sample,token)
+        action_index, sample = toImageSample(addr)
         train_data_set[action_index,sample_index[action_index]]=sample
         sample_index[action_index]=sample_index[action_index]+1
     return train_data_set
+
+
+def toImageSample(addr):
+    skelet = load_data(addr)  # skelet是numpy的ndarray类型
+    token = addr.split('\\')[-1].split('.')[0]
+    action_index = int(token[17:]) - 1
+    bodyA = skelet[0, :, :, :]
+    bodyB = skelet[1, :, :, :]
+    sample = None
+    # 拼接两个图像
+    if bodyA.max() > 1e-6 and bodyB.max() > 1e-6:
+        imB = get_diff_feature(bodyB, 1)
+        imA = get_diff_feature(bodyA, 1)
+        merge = np.vstack((imA, imB))
+        sample = resize(merge)
+    elif bodyA.max() > 1e-6:
+        sample = get_diff_feature(bodyA, 1)
+    elif bodyB.max() > 1e-6:
+        sample = get_diff_feature(bodyB, 1)
+    else:
+        print("error")
+    # 根据具体的类存入到相应的位置中
+    ouput_3_gray_imge(sample, token)
+    return action_index, sample
+
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
@@ -189,10 +195,8 @@ def encoder(x, h_dim, z_dim,reuse=False):
         return net
 
 
-test_set=getXViewTestingAddr()
 
-def nextTestSample():
-    pass
+
 
 def mymovefile(srcfile,dstfile):
     if not os.path.isfile(srcfile):
@@ -271,17 +275,16 @@ def train_test():
     total_ls=0
     corecct_count=0
     total_count=0
+    test_set = getXViewTestingAddr()
     while True:
-        epi_classes = (np.arange(n_classes)+1)[:n_test_way]
+        epi_classes = (np.arange(n_classes))[:n_test_way]
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         #query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
-
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             #selected_query = np.random.permutation(n_test_query)#22个样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
             #query[i] = test_dataset[epi_cls, selected_query]
-            id,count,query=nextTestSample()
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         '''
@@ -291,11 +294,16 @@ def train_test():
         4 4 4
         5 5 5
         '''
-        labels = np.tile(np.array([id])[:, np.newaxis], (1, count)).astype(np.uint8)
-        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
-        corecct_count+=ac*count
-        total_count+=count
-        total_ls+= (ls*count)
+        #id, count, query = nextTestSample()
+        for addr in test_set:
+            action_index, sample=toImageSample(addr)
+            action=action_index+1
+            labels = np.tile(np.array([action])[:, np.newaxis], (1, 1)).astype(np.uint8)
+            ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
+            corecct_count+=ac*1
+            total_count+=1
+            total_ls+= (ls*1)
+            print(corecct_count)
         # avg_acc += ac
         # avg_ls+=ls
         # if (epi+1) % 50 == 0:
