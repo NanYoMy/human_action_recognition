@@ -240,20 +240,18 @@ def train_test():
     saver.save(sess, ckpt_path)
 
     print('Testing normal classes...')
-    avg_acc = 0.
-    avg_ls=0.
     for epi in range(n_test_episodes):
         epi_classes = np.random.permutation(n_classes)[:n_test_way]
+
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-
+            print(selected_support)
         action_idx,count,query=nextBatch2(train_dataset)
         labels = np.tile(np.array([action_idx])[:, np.newaxis], (1, count)).astype(np.uint8)
         ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
         print(' Average loss : {:.5f} Average Test Accuracy: {:.5f}'.format(ls, ac))
-
     sess.close()
 
 def load_test():
