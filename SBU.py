@@ -77,6 +77,13 @@ def nextBatch(test_set):
     query = np.zeros([1, len(sample_per_action), im_height, im_width, channels], dtype=np.float32)
     query[0]=sample_per_action
     return cur_action,len(sample_per_action),query
+def nextBatch2(test_set):
+    global cur_action
+    sample_per_action=test_set[cur_action]
+    query = np.zeros([1, sample_per_action.shape[0], im_height, im_width, channels], dtype=np.float32)
+    query[0]=sample_per_action
+    return cur_action,sample_per_action.shape[0],query
+
 def get_diff_feature(skeletA,skeletB,ref_point_index=3):#第三个点刚刚好是hip center
     # feature=skelet.swapaxes(1,0)
     # for i in range(feature.shape[1]):
@@ -242,12 +249,12 @@ def train_test():
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
 
-        action_idx,count,query=nextBatch(test_dataset)
+        action_idx,count,query=nextBatch2(train_dataset)
         labels = np.tile(np.array([action_idx])[:, np.newaxis], (1, count)).astype(np.uint8)
         ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
         print(' Average loss : {:.5f} Average Test Accuracy: {:.5f}'.format(ls, ac))
 
-    sess
+    sess.close()
 
 def load_test():
 
