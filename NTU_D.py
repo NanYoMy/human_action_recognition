@@ -81,7 +81,6 @@ def getXViewTestingAddr():
 
 
 
-
 def resize(diff_feature):
     sample=np.zeros([im_height,im_width,3])
     sample[:, :, 0] = transform.resize(diff_feature[:, :, 0], (im_height,im_width), mode='reflect', anti_aliasing=True)
@@ -144,12 +143,12 @@ def toImageSample(addr):
     else:
         print("error")
     # 根据具体的类存入到相应的位置中
-    ouput_3_gray_imge(sample, token)
+    #ouput_3_gray_imge(sample, token)
     return action_index, sample
 
 
 def encoder(x, h_dim, z_dim,reuse=False):
-    with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
+    with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置,当为false的时候，会新建网络参数，当为true时候，不会新建参数
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
         #---------#
 
@@ -199,14 +198,14 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
         return net
 
-all_test_set = getXViewTestingAddr()
+
+
 cur_action=0
 cur_item=0
 batch_size=100
-def nextBatch():
+def nextBatch(all_test_set):
     global  cur_item
     global cur_action
-    global all_test_set
     ret_batch=0
     ret_action=0
     ret_addr=[]
@@ -230,9 +229,6 @@ def nextBatch():
         query[1,i]=toImageSample(addr)
     return cur_action,ret_batch,query
 
-
-
-
 def mymovefile(srcfile,dstfile):
     if not os.path.isfile(srcfile):
         print("%s not exist!"%(srcfile))
@@ -244,15 +240,9 @@ def mymovefile(srcfile,dstfile):
         print("move %s -> %s"%( srcfile,dstfile))
 
 def train_test():
-    # train_data_addr=getXViewTrainingAddr()
-    # for i in  train_data_addr:
-    #     tmp=i.replace("mat","mat_train")
-    #     mymovefile(i,tmp)
     train_data_addr=glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
     train_dataset=prepar_train_data(train_data_addr, n_classes)
     print(train_dataset.shape)#(60,10, 25, 90, 3)
-
-
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='x')
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='q')
     x_shape = tf.shape(x)
@@ -278,6 +268,8 @@ def train_test():
 
     tf.add_to_collection('acc', acc)
     tf.add_to_collection('loss', ce_loss)
+    tf.add_to_collection('y_one_hot',y_one_hot)
+    tf.add_to_collection('log_p_y',log_p_y)
     train_op = tf.train.AdamOptimizer().minimize(ce_loss)
     saver = tf.train.Saver()
     sess = tf.InteractiveSession()
@@ -299,7 +291,7 @@ def train_test():
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
-        _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
+        _, ls, ac,one_hot = sess.run([train_op, ce_loss, acc,y_one_hot], feed_dict={x: support, q: query, y: labels})
 
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
@@ -310,56 +302,40 @@ def train_test():
     total_ls=0
     corecct_count=0
     total_count=0
-
     for epi in range(n_test_episodes):
         epi_classes = (np.arange(n_classes))[:n_test_way]
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-        #query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            #selected_query = np.random.permutation(n_test_query)#22个样本
+            selected_support = np.arange(n_query+n_support)[:n_test_support]#从训练集合取support样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            #query[i] = test_dataset[epi_cls, selected_query]
-        # support = np.expand_dims(support, axis=-1)
-        # query = np.expand_dims(query, axis=-1)
-        '''
-        0 0 0
-        1 1 1 
-        2 2 2
-        3 3 3
-        4 4 4
-        5 5 5
-        '''
-        #id, count, query = nextTestSample()
+
+        all_test_set=glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
         for addr in all_test_set:
             action_index, sample=toImageSample(addr)# 在训练的时候用的0-59
             count=1
             labels = np.tile(np.array([action_index])[:, np.newaxis], (1, count)).astype(np.uint8)
-
-            ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
+            print(labels)
+            query = np.zeros([1, 1, im_height, im_width, channels], dtype=np.float32)
+            query[0,0]=sample
+            ls, ac,one_hot = sess.run([ce_loss, acc,y_one_hot], feed_dict={x: support, q: query, y:labels})
+            print(sess.run(emb_x, feed_dict={x: support, q: query, y:labels}))
+            print(sess.run(log_p_y, feed_dict={x: support, q: query, y: labels}))
+            print(sess.run(y_one_hot, feed_dict={x: support, q: query, y: labels}))
+            #print(one_hot)
             corecct_count+=ac*1
             total_count+=1
             total_ls+= (ls*1)
-            print(corecct_count)
-        # avg_acc += ac
-        # avg_ls+=ls
-        # if (epi+1) % 50 == 0:
-        #     print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
+
     avg_acc = corecct_count/total_count
     avg_ls=total_ls/total_count
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
-
-    '''
-    #， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取， 完成
-    #， 测试的修改：分27类 现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
-    图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
-    '''
+    sess.close()
 #批量的处理
 def load_test():
     train_data_addr = glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
     train_dataset = prepar_train_data(train_data_addr, n_classes)
     print(train_dataset.shape)  # (60,10, 25, 90, 3)
-
+    all_test_set = getXViewTestingAddr()
     sess = tf.Session()
     saver = tf.train.import_meta_graph('%s.meta'%ckpt_path)
     saver.restore(sess,ckpt_path)
@@ -370,7 +346,7 @@ def load_test():
     ce_loss=tf.get_collection('loss')[0]
     acc=tf.get_collection('acc')[0]
     avg_acc = 0.
-    total_ls=0
+    total_ls=0.
     corecct_count=0
     total_count=0
     for epi in range(n_test_episodes):
@@ -378,23 +354,11 @@ def load_test():
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         # query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
-            selected_support = np.random.permutation(n_query + n_support)[:n_test_support]  # 从训练集合取support样本
-            # selected_query = np.random.permutation(n_test_query)#22个样本
+            selected_support = np.arange(n_query + n_support)[:n_test_support]  # 从训练集合取support样本
             support[i] = train_dataset[epi_cls, selected_support]  # 从训练集合取support样本
-            # query[i] = test_dataset[epi_cls, selected_query]
-        # support = np.expand_dims(support, axis=-1)
-        # query = np.expand_dims(query, axis=-1)
-        '''
-        0 0 0
-        1 1 1 
-        2 2 2
-        3 3 3
-        4 4 4
-        5 5 5
-        '''
-        # id, count, query = nextTestSample()
+
         while cur_action!=61:
-            action_index,count, query = nextBatch()  # 在训练的时候用的0-59
+            action_index,count, query = nextBatch(all_test_set)  # 在训练的时候用的0-59
 
             labels = np.tile(np.array([action_index])[:, np.newaxis], (1, count)).astype(np.uint8)
 
@@ -403,13 +367,57 @@ def load_test():
             total_count += 1
             total_ls += (ls * 1)
             print(corecct_count)
-        # avg_acc += ac
-        # avg_ls+=ls
-        # if (epi+1) % 50 == 0:
-        #     print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
     avg_acc = corecct_count / total_count
     avg_ls = total_ls / total_count
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc, avg_ls))
 
+def load_test2():
+    train_data_addr = glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
+    train_dataset = prepar_train_data(train_data_addr, n_classes)
+    print(train_dataset.shape)  # (60,10, 25, 90, 3)
+    sess = tf.InteractiveSession()
+    saver = tf.train.import_meta_graph('%s.meta'%ckpt_path)
+    saver.restore(sess,ckpt_path)
+    graph = tf.get_default_graph()
+    x=graph.get_operation_by_name('x').outputs[0]
+    y=graph.get_operation_by_name('y').outputs[0]
+    q =graph.get_operation_by_name('q').outputs[0]
+    ce_loss=tf.get_collection('loss')[0]
+    acc=tf.get_collection('acc')[0]
+    log_p_y=tf.get_collection('log_p_y')[0]
+    y_one_hot = tf.get_collection('y_one_hot')[0]
 
+    avg_acc = 0.
+    total_ls=0
+    corecct_count=0
+    total_count=0
+    for epi in range(n_test_episodes):
+        epi_classes = (np.arange(n_classes))[:n_test_way]
+        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
+        for i, epi_cls in enumerate(epi_classes):
+            selected_support = np.arange(n_query+n_support)[:n_test_support]#从训练集合取support样本
+            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
+
+        all_test_set=glob.glob('D:\\NTUDATA\\nturgbd_skeletons\\mat_train\\*.mat_train')
+        for addr in all_test_set:
+            action_index, sample=toImageSample(addr)# 在训练的时候用的0-59
+            count=1
+            labels = np.tile(np.array([action_index])[:, np.newaxis], (1, count)).astype(np.uint8)
+            print(labels)
+            query = np.zeros([1, 1, im_height, im_width, channels], dtype=np.float32)
+            query[0,0]=sample
+            ls, ac,one_hot,log_p = sess.run([ce_loss, acc,y_one_hot,log_p_y], feed_dict={x: support, q: query, y:labels})
+            print("accuracy:"+str(ac))
+            print(log_p)
+            print(one_hot)
+            #print(one_hot)
+            corecct_count+=ac*1
+            total_count+=1
+            total_ls+= (ls*1)
+
+    avg_acc = corecct_count/total_count
+    avg_ls=total_ls/total_count
+    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
+    sess.close()
 train_test()
+load_test2()
