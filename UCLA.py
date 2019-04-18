@@ -15,16 +15,16 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=20
-n_episodes = 60
-n_classes=8
-n_way = 8
+n_episodes = 160
+n_classes=10
+n_way = 10
 n_support = 4
 n_query = 4
 #test setting
 n_test_episodes = 1000
 n_test_way = n_way
 n_test_support = n_support
-im_height,im_width,  channels = 20,50,6
+im_height,im_width,  channels = 20,50,3
 h_dim = 8
 z_dim = 64
 
@@ -37,19 +37,11 @@ def euclidean_distance(query=None, prototype=None): # a是query b是prototype
     return tf.reduce_mean(tf.square(query - prototype), axis=2)
 
 def load_txt_data(path):
-    skelet = np.loadtxt(path, delimiter=",", dtype=np.float32)
-    skelet=np.delete(skelet,0,axis=1)
-    skeletA,skeletB=np.split(skelet,[45],1)
-    frame=skeletA.shape[0]
-    skeletA=skeletA.reshape(frame,n_joint,3)
-    frame=skeletB.shape[0]
-    skeletB=skeletB.reshape(frame,n_joint,3)
-    skeletA=skeletA.swapaxes(1,0)
-    skeletB = skeletB.swapaxes(1, 0)
-    # skelet[:,:,0]=skelet[:,:,0]-skelet[:,:,0].mean()
-    # skelet[:, :, 1] = skelet[:, :, 1] - skelet[:, :,1].mean()
-    # skelet[:, :, 2] = skelet[:, :, 2] - skelet[:, :, 2].mean()
-    return skeletA,skeletB
+    data = sio.loadmat(path)
+    skelet = data['skeleton']
+    skelet=skelet.swapaxes(1,2)
+
+    return skelet
 def Normalize(data,factor):
     m = np.mean(data)
     mx = data.max()
@@ -67,13 +59,23 @@ def resize(feature):
         sample[:, :, i] = transform.resize(feature[:, :, i], (im_height, im_width), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
-cur_action=0
-def nextBatch(test_set):
-    global cur_action
-    sample_per_action=test_set[cur_action]
+def getTestBatch(test_set,action):
+
+    sample_per_action=test_set[action]
     query = np.zeros([1, len(sample_per_action), im_height, im_width, channels], dtype=np.float32)
-    query[0]=sample_per_action
-    return cur_action,len(sample_per_action),query
+    for i,item in enumerate(sample_per_action):
+        query[0,i]=item
+    return len(sample_per_action),query
+# def getTestBatch(test_set,action):
+#
+#     sample_per_action=test_set[action]
+#     query = np.zeros([1, 8, im_height, im_width, channels], dtype=np.float32)
+#     for i,item in enumerate(sample_per_action):
+#         if i==8:
+#             break
+#         query[0,i]=item
+#     return 8,query
+
 
 def data_fix(feature,ref_point_index=3):
 
@@ -82,53 +84,53 @@ def data_fix(feature,ref_point_index=3):
     feature_new=np.delete(feature,ref_point_index,axis=0)
     return feature_new
 
-def normalize_skeleton(skeletA, skeletB):#第三个点刚刚好是hip center
-    # skeletB=data_fix(skeletB,2)
-    # skeletA = data_fix(skeletA,2 )
+def normalize_skeleton(skeletA):#第三个点刚刚好是hip center
+
     factor=get_channal_max_range(skeletA)
     for i in range(skeletA.shape[2]):
         skeletA[:,:,i]=Normalize(skeletA[:,:,i],factor)
-    factor = get_channal_max_range(skeletB)
-    for i in range(skeletB.shape[2]):
-        skeletB[:,:,i]=Normalize(skeletB[:,:,i],factor)
-
-    return skeletA,skeletB
+    im=resize(skeletA)
+    return im
 def ouput_3_gray_imge(diff_feature,path):
     prename = path.split('\\')[-1]
     print(prename)
-    x_im=diff_feature[:, :, 0]*255
-    im = Image.fromarray(x_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton5\\img\\x_%s.bmp") % (prename))
+    # x_im=diff_feature[:, :, 0]*255
+    # im = Image.fromarray(x_im.astype(np.uint8))
+    # im.save((".\\data\\Skeleton6\\img\\x_%s.bmp") % (prename))
+    #
+    # y_im=diff_feature[:, :, 1]*255
+    # im = Image.fromarray(y_im.astype(np.uint8))
+    # im.save((".\\data\\Skeleton6\\img\\y_%s.bmp") % (prename))
+    #
+    # z_im=diff_feature[:, :, 2]*255
+    # im = Image.fromarray(z_im.astype(np.uint8))
+    # im.save((".\\data\\Skeleton6\\img\\z_%s.bmp") % (prename))
 
-    y_im=diff_feature[:, :, 1]*255
-    im = Image.fromarray(y_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton5\\img\\y_%s.bmp") % (prename))
-
-    z_im=diff_feature[:, :, 2]*255
-    im = Image.fromarray(z_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton5\\img\\z_%s.bmp") % (prename))
+    rgb=diff_feature*255
+    im=Image.fromarray(rgb.astype(np.uint8))
+    im.save((".\\data\\Skeleton6\\img\\%s.bmp") % (prename))
 def prepar_data(data_addr,n_classes,offset=0):
-    train_set=np.zeros([n_classes,n_query+n_support,im_height, im_width,channels], dtype=np.float32)
+    train_set={}
     test_set={}
     for i in range(n_classes):
         test_set[i]=[]
-    index=np.zeros([8],np.int)
+        train_set[i]=[]
     for addr in data_addr:
-        skeletA,skeletB = load_txt_data(addr)# skelet是numpy的ndarray类型
-        token = addr.split('\\')[-1].split('-')
-        i=int(token[0])-1#class
-        j=index[i]
-        sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
-        # merge_sample=resize(np.concatenate((sampleA, sampleB), axis=2))
-        merge_sample = resize(np.vstack((sampleA, sampleB)))
-        if(index[i]<(n_query+n_support)):#小于8的
-            train_set[i, j] = resize(merge_sample)
-            index[i] = index[i] + 1
+        sample = load_txt_data(addr)# skelet是numpy的ndarray类型
+
+        if sample.shape[1]<5:
+            print("=========eroor======="+addr)
+            continue
+        sample = data_fix(sample, ref_point_index=1)
+        token = addr.split('\\')[-1].split('_')
+        i=int(token[0][1:3])-1#class
+        sample = normalize_skeleton(sample)
+        ouput_3_gray_imge(sample,addr)
+        if(token[3]=="v3"):#小于8的
+            test_set[i].append(sample)
         else:
-           test_set[i].append(merge_sample)
-
+            train_set[i].append(sample)
     return train_set,test_set
-
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
         # block_1_in = tf.layers.conv2d(x, h_dim, kernel_size=1, padding='SAME')
@@ -161,27 +163,40 @@ def encoder(x, h_dim, z_dim,reuse=False):
         # ---------#
 
         net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [1,2],strides=[1, 2])
         net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
         return net
+def format_data_matrix(data,length):
+    matrix_set=np.zeros([n_classes,length,im_height,im_width,channels])
+    index=np.zeros(n_classes,int)
+    for key in data.keys():
+        for item in data[key]:
+            if index[key]>=length:
+                break
+            i=key
+            j=index[key]
+            matrix_set[i,j]=item
+            index[key]=index[key]+1
+
+    return matrix_set
 def train_test():
-    data_addr = sorted(glob.glob('.\\data\\Skeleton5\\*.txt'))# all data
+    data_addr = sorted(glob.glob('D:\\Northwestern-UCLA_skeleton\\*.mat'))
     train_dataset,test_dataset=prepar_data(data_addr, n_classes)
-    print(train_dataset.shape)
+    train_matrix=format_data_matrix(train_dataset,n_support+n_query)
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="x")
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="q")
     x_shape = tf.shape(x)
@@ -224,8 +239,8 @@ def train_test():
         query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
             selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
-            support[i] = train_dataset[epi_cls, selected[:n_support]]
-            query[i] = train_dataset[epi_cls, selected[n_support:]]
+            support[i] = train_matrix[epi_cls, selected[:n_support]]
+            query[i] = train_matrix[epi_cls, selected[n_support:]]
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
         _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         #if (epi + 1) %50 == 0:
@@ -235,27 +250,36 @@ def train_test():
     print('Testing normal classes...')
     avg_acc = 0.
     avg_ls=0.
-
     for epi in range(n_test_episodes):
-        epi_classes = np.arange(n_classes)[:n_test_way]
+        epi_classes = np.random.permutation(n_classes)[:n_test_way]
         # epi_classes=np.arange(n_test_way)[:n_test_way]
-        action_id,n_test_query,query=nextBatch(test_dataset)
+        # n_test_query,query=getTestBatch(test_dataset,action)
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         # query2 = np.zeros([1,n_test_query,im_height,im_width,channels],dtype=np.float32)
 
         for i, epi_cls in enumerate(epi_classes):
-            selected_support = np.arange(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-        for i in epi_classes:
-            if epi_classes[i]==action_id:
-                action_id=i
-                break
-        labels = np.tile(np.array([action_id])[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
+            support[i] = train_matrix[epi_cls, selected_support]#从训练集合取support样本
 
-        ls, ac,log_p,distance,out_emb_q,out_emb_x = sess.run([ce_loss, acc,log_p_y,dists,emb_q,emb_x], feed_dict={x: support, q: query2, y: labels})
-        avg_acc += ac
-        avg_ls += ls
-        if (epi + 1) % 50 == 0:
+        for action in train_dataset.keys():
+            count,query=getTestBatch(train_dataset,action)
+            label_id=getLabelForAction(action, epi_classes)
+            labels = np.tile(np.array([label_id])[:, np.newaxis], (1, count)).astype(np.uint8)
+            ls, ac,log_p,distance,out_emb_q,out_emb_x = sess.run([ce_loss, acc,log_p_y,dists,emb_q,emb_x], feed_dict={x: support, q: query, y: labels})
+            avg_acc += ac
+            avg_ls += ls
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
+            # if (epi + 1) % 50 == 0:
+            #     print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
     sess.close()
 
+
+def getLabelForAction(action, epi_classes):
+    for i in epi_classes:
+        if epi_classes[i] == action:
+            return i
+    print("error,cant find label for specific action")
+    return -1
+
+
+train_test()
