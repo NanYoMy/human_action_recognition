@@ -270,16 +270,20 @@ def train_test():
     avg_acc = 0.
     avg_ls=0.
     for epi in range(n_test_episodes):
-        epi_classes = np.random.permutation(n_classes)[:n_test_way]
+        # epi_classes = np.random.permutation(n_classes)[:n_test_way]
+        epi_classes=np.arange(n_test_way)[:n_test_way]
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-        query = np.zeros([n_test_way,n_test_query,im_height,im_width,channels],dtype=np.float32)
+        query = np.zeros([1,n_test_query,im_height,im_width,channels],dtype=np.float32)
 
         for i, epi_cls in enumerate(epi_classes):
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            selected_query = np.random.permutation(n_test_query)
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            query[i] = train_dataset[epi_cls, selected_query]
-        labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+
+        selected_query = np.random.permutation(n_test_query)
+        test_tmp_aciton=3
+        query[0] = train_dataset[test_tmp_aciton, selected_query]
+        labels = np.tile(np.array([test_tmp_aciton])[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+
         ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         avg_acc += ac
         avg_ls += ls
