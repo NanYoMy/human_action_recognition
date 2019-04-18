@@ -122,6 +122,7 @@ def prepar_train_data(data_addr, n_classes):
         sample_index[action_index]=sample_index[action_index]+1
     return train_data_set
 
+
 def toImageSample(addr):
     skelet = load_data(addr)  # skelet是numpy的ndarray类型
     token = addr.split('\\')[-1].split('.')[0]
@@ -144,6 +145,7 @@ def toImageSample(addr):
     # 根据具体的类存入到相应的位置中
     #ouput_3_gray_imge(sample, token)
     return action_index, sample
+
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置,当为false的时候，会新建网络参数，当为true时候，不会新建参数
@@ -195,6 +197,9 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
 
         return net
+
+
+
 cur_action=0
 cur_item=0
 batch_size=100
