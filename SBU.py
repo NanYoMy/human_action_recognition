@@ -195,17 +195,17 @@ def encoder(x, h_dim, z_dim,reuse=False):
         # ---------#
 
         net = tf.layers.conv2d(net, h_dim*8, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [1,2],strides=[1, 2])
         net = tf.layers.conv2d(net, h_dim*4, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
-        net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
+        # net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
 
         net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
@@ -229,8 +229,8 @@ def train_test():
     #emb_x是样本通过encoder之后的结果
     emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
     emb_dim = tf.shape(emb_x)[-1] # the last dimesion
-
     emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
+
     emb_q = encoder(tf.reshape(q, [numb_queris_class * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
 
     dists = euclidean_distance(emb_q, emb_x)
@@ -269,53 +269,55 @@ def train_test():
     print('Testing normal classes...')
     avg_acc = 0.
     avg_ls=0.
+
     for epi in range(n_test_episodes):
-        epi_classes = np.random.permutation(n_classes)[:n_test_way]
+        epi_classes = np.arange(n_classes)[:n_test_way]
         # epi_classes=np.arange(n_test_way)[:n_test_way]
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         query = np.zeros([n_test_way,n_test_query,im_height,im_width,channels],dtype=np.float32)
 
         for i, epi_cls in enumerate(epi_classes):
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
+            selected_support = np.arange(n_query+n_support)[:n_test_support]#从训练集合取support样本
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            selected_query = np.random.permutation(n_test_query)
+            selected_query = np.arange(n_test_query)
             query[i] = train_dataset[epi_cls, selected_query]
 
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
 
-        ls, ac,log_p = sess.run([ce_loss, acc,log_p_y], feed_dict={x: support, q: query, y: labels})
+        ls_1, ac_1, log_p_1, distance_1, out_emb_q_1, out_emb_x_1 = sess.run([ce_loss, acc, log_p_y, dists, emb_q, emb_x],feed_dict={x: support, q: query, y: labels})
+        avg_acc += ac_1
+        avg_ls += ls_1
+        if (epi + 1) % 50 == 0:
+            print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls_1, ac_1))
+    # sess.close()
+
+    print('Testing normal classes...')
+    avg_acc = 0.
+    avg_ls=0.
+
+    for epi in range(n_test_episodes):
+        epi_classes = np.arange(n_classes)[:n_test_way]
+        # epi_classes=np.arange(n_test_way)[:n_test_way]
+        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
+        query2 = np.zeros([1,n_test_query,im_height,im_width,channels],dtype=np.float32)
+
+        for i, epi_cls in enumerate(epi_classes):
+            selected_support = np.arange(n_query+n_support)[:n_test_support]#从训练集合取support样本
+            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
+
+        selected_query = np.arange(n_test_query)
+        test_tmp_aciton=0
+        query2[0] = train_dataset[test_tmp_aciton, selected_query]
+        for i in epi_classes:
+            if epi_classes[i]==test_tmp_aciton:
+                test_tmp_aciton=i
+                break
+        labels = np.tile(np.array([test_tmp_aciton])[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+
+        ls, ac,log_p,distance,out_emb_q,out_emb_x = sess.run([ce_loss, acc,log_p_y,dists,emb_q,emb_x], feed_dict={x: support, q: query2, y: labels})
         avg_acc += ac
         avg_ls += ls
         if (epi + 1) % 50 == 0:
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
     sess.close()
-
-    # print('Testing normal classes...')
-    # avg_acc = 0.
-    # avg_ls=0.
-    # for epi in range(n_test_episodes):
-    #     epi_classes = np.random.permutation(n_classes)[:n_test_way]
-    #     # epi_classes=np.arange(n_test_way)[:n_test_way]
-    #     support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-    #     query = np.zeros([1,n_test_query,im_height,im_width,channels],dtype=np.float32)
-    #
-    #     for i, epi_cls in enumerate(epi_classes):
-    #         selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-    #         support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-    #
-    #     selected_query = np.random.permutation(n_test_query)
-    #     test_tmp_aciton=3
-    #     query[0] = train_dataset[test_tmp_aciton, selected_query]
-    #     for i in epi_classes:
-    #         if epi_classes[i]==test_tmp_aciton:
-    #             test_tmp_aciton=i
-    #             break
-    #     labels = np.tile(np.array([test_tmp_aciton])[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
-    #
-    #     ls, ac,log_p = sess.run([ce_loss, acc,log_p_y], feed_dict={x: support, q: query, y: labels})
-    #     avg_acc += ac
-    #     avg_ls += ls
-    #     if (epi + 1) % 50 == 0:
-    #         print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1, n_test_episodes, ls, ac))
-    # sess.close()
 
