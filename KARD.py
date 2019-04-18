@@ -28,7 +28,7 @@ n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 AS=np.array([0, 2, 11, 14, 17, 8, 13, 5])
 im_height,im_width,  channels = 15,80, 3
-h_dim = 8
+h_dim = 16
 z_dim = 64
 is_sub_set=False
 ckpt_path='./ckpt/untitled'

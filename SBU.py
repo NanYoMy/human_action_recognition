@@ -27,7 +27,7 @@ n_test_way = n_way
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_height,im_width,  channels = 30,40,3
+im_height,im_width,  channels = 15,50,6
 h_dim = 8
 z_dim = 64
 
@@ -92,8 +92,8 @@ def data_fix(feature,ref_point_index=3):
     return feature_new
 
 def normalize_skeleton(skeletA, skeletB):#第三个点刚刚好是hip center
-    skeletB=data_fix(skeletB,2)
-    skeletA = data_fix(skeletA,2 )
+    # skeletB=data_fix(skeletB,2)
+    # skeletA = data_fix(skeletA,2 )
     factor=get_channal_max_range(skeletA)
     for i in range(skeletA.shape[2]):
         skeletA[:,:,i]=Normalize(skeletA[:,:,i],factor)
@@ -116,27 +116,27 @@ def ouput_3_gray_imge(diff_feature,path):
     z_im=diff_feature[:, :, 2]*255
     im = Image.fromarray(z_im.astype(np.uint8))
     im.save((".\\data\\Skeleton5\\img\\z_%s.bmp") % (prename))
-def prepar_data(data_addr,n_classes,offset=0):
-    train_set=np.zeros([n_classes,n_query+n_support,im_height, im_width,channels], dtype=np.float32)
-    test_set={}
-    for i in range(n_classes):
-        test_set[i]=[]
-    index=np.zeros([8],np.int)
-    for addr in data_addr:
-        skeletA,skeletB = load_txt_data(addr)# skelet是numpy的ndarray类型
-        token = addr.split('\\')[-1].split('-')
-        i=int(token[0])-1#class
-        j=index[i]
-        sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
-        # merge_sample=resize(np.concatenate((sampleA, sampleB), axis=2))
-        merge_sample = resize(np.vstack((sampleA, sampleB)))
-        if(index[i]<(n_query+n_support)):#小于8的
-            train_set[i, j] = resize(merge_sample)
-            index[i] = index[i] + 1
-        else:
-           test_set[i].append(merge_sample)
-
-    return train_set,test_set
+# def prepar_data(data_addr,n_classes,offset=0):
+#     train_set=np.zeros([n_classes,n_query+n_support,im_height, im_width,channels], dtype=np.float32)
+#     test_set={}
+#     for i in range(n_classes):
+#         test_set[i]=[]
+#     index=np.zeros([8],np.int)
+#     for addr in data_addr:
+#         skeletA,skeletB = load_txt_data(addr)# skelet是numpy的ndarray类型
+#         token = addr.split('\\')[-1].split('-')
+#         i=int(token[0])-1#class
+#         j=index[i]
+#         sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
+#         # merge_sample=resize(np.concatenate((sampleA, sampleB), axis=2))
+#         merge_sample = resize(np.vstack((sampleA, sampleB)))
+#         if(index[i]<(n_query+n_support)):#小于8的
+#             train_set[i, j] = resize(merge_sample)
+#             index[i] = index[i] + 1
+#         else:
+#            test_set[i].append(merge_sample)
+#
+#     return train_set,test_set
 def prepar_data_matrix(data_addr,n_classes):
     train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width,channels], dtype=np.float32)
     test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, channels], dtype=np.float32)
@@ -147,8 +147,10 @@ def prepar_data_matrix(data_addr,n_classes):
         token = addr.split('\\')[-1].split('-')
         i = int(token[0]) - 1  # class
         sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
-        # merge_sample = resize(np.concatenate((sampleA, sampleB), axis=2))
-        merge_sample = resize(np.vstack((sampleA, sampleB)))
+        # ouput_3_gray_imge(sampleA,addr+'_a')
+        # ouput_3_gray_imge(sampleB, addr + '_b')
+        merge_sample = resize(np.concatenate((sampleA, sampleB), axis=2))
+        # merge_sample = resize(np.vstack((sampleA, sampleB)))
         if (train_index[i] < (n_query + n_support)):  # 小于8的
             j = train_index[i]
             train_data_set[i, j] = resize(merge_sample)
@@ -181,7 +183,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
         #---------#
         block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
-        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 6],padding='SAME')
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 4],padding='SAME')
         # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
@@ -276,7 +278,7 @@ def train_test():
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)
             support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            query[i] = test_dataset[epi_cls, selected_query]
+            query[i] = train_dataset[epi_cls, selected_query]
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
         ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         avg_acc += ac
@@ -299,6 +301,6 @@ def train_test():
     #     labels = np.tile(np.array([action_idx])[:, np.newaxis], (1, count)).astype(np.uint8)
     #     ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
     #     print(' Average loss : {:.5f} Average Test Accuracy: {:.5f}'.format(ls, ac))
-    #
+
     # sess.close()
 
