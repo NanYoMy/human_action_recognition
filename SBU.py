@@ -84,11 +84,16 @@ def nextBatch2(test_set):
     query[0]=sample_per_action
     return cur_action,sample_per_action.shape[0],query
 
-def normalize_skeleton(skeletA, skeletB, ref_point_index=3):#第三个点刚刚好是hip center
-    # feature=skelet.swapaxes(1,0)
-    # for i in range(feature.shape[1]):
-    #     feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
-    # im=np.delete(feature,ref_point_index,axis=0)
+def data_fix(feature,ref_point_index=3):
+
+    for i in range(feature.shape[1]):
+        feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
+    feature_new=np.delete(feature,ref_point_index,axis=0)
+    return feature_new
+
+def normalize_skeleton(skeletA, skeletB):#第三个点刚刚好是hip center
+    skeletB=data_fix(skeletB,2)
+    skeletA = data_fix(skeletA,2 )
     factor=get_channal_max_range(skeletA)
     for i in range(skeletA.shape[2]):
         skeletA[:,:,i]=Normalize(skeletA[:,:,i],factor)
@@ -123,7 +128,8 @@ def prepar_data(data_addr,n_classes,offset=0):
         i=int(token[0])-1#class
         j=index[i]
         sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
-        merge_sample=resize(np.concatenate((sampleA, sampleB), axis=2))
+        # merge_sample=resize(np.concatenate((sampleA, sampleB), axis=2))
+        merge_sample = resize(np.vstack((sampleA, sampleB)))
         if(index[i]<(n_query+n_support)):#小于8的
             train_set[i, j] = resize(merge_sample)
             index[i] = index[i] + 1
@@ -141,7 +147,8 @@ def prepar_data_matrix(data_addr,n_classes):
         token = addr.split('\\')[-1].split('-')
         i = int(token[0]) - 1  # class
         sampleA, sampleB = normalize_skeleton(skeletA, skeletB)
-        merge_sample = resize(np.concatenate((sampleA, sampleB), axis=2))
+        # merge_sample = resize(np.concatenate((sampleA, sampleB), axis=2))
+        merge_sample = resize(np.vstack((sampleA, sampleB)))
         if (train_index[i] < (n_query + n_support)):  # 小于8的
             j = train_index[i]
             train_data_set[i, j] = resize(merge_sample)
@@ -160,21 +167,21 @@ def encoder(x, h_dim, z_dim,reuse=False):
         #---------#
 
         block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
-        block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 4],padding='SAME')  # 64 filters, each filter will generate a feature map.
+        block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
         # block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
         block_1_out = tf.nn.relu(block_1_out)
         #---------#
 
         #---------#
         block_2_in = tf.concat([block_1_out, block_1_in], axis=3)
-        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[2, 6],padding='SAME')
+        block_2_out = tf.layers.conv2d(block_2_in, h_dim*2, kernel_size=[2, 3], dilation_rate=[2, 4],padding='SAME')
         # block_2_out = tf.contrib.layers.batch_norm(block_2_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_2_out = tf.nn.relu(block_2_out)
         #---------#
 
         #---------#
         block_3_in = tf.concat([block_2_out, block_1_out,block_1_in], axis=3)
-        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 8],padding='SAME')
+        block_3_out = tf.layers.conv2d(block_3_in, h_dim*3, kernel_size=[2, 3], dilation_rate=[2, 6],padding='SAME')
         # block_3_out = tf.contrib.layers.batch_norm(block_3_out, updates_collections=None, decay=0.99, scale=True,center=True)
         block_3_out = tf.nn.relu(block_3_out)
         #---------#
