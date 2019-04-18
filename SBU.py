@@ -19,16 +19,16 @@ n_episodes = 60
 n_classes=8
 n_sample_per_class=15
 n_way = 8
-n_support = 5
-n_query = 5
+n_support = 4
+n_query = 4
 #test setting
 n_test_episodes = 1000
 n_test_way = n_way
 n_test_support = n_support
 n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
 
-im_height,im_width,  channels = 15,40, 6
-h_dim = 16
+im_height,im_width,  channels = 30,40,3
+h_dim = 8
 z_dim = 64
 
 ckpt_path='./ckpt/untitled'
@@ -132,8 +132,8 @@ def prepar_data(data_addr,n_classes,offset=0):
 
     return train_set,test_set
 def prepar_data_matrix(data_addr,n_classes):
-    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
-    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
+    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width,channels], dtype=np.float32)
+    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, channels], dtype=np.float32)
     train_index = np.zeros([8], np.int)
     test_index = np.zeros([8], np.int)
     for addr in data_addr:
@@ -146,12 +146,13 @@ def prepar_data_matrix(data_addr,n_classes):
             j = train_index[i]
             train_data_set[i, j] = resize(merge_sample)
             train_index[i] = train_index[i] + 1
-        else:
+        elif (test_index[i]<(n_sample_per_class-n_query-n_support)):
             j = test_index[i]
             test_data_set[i, j]= resize(merge_sample)
-            test_index[i]=test_index+1
-
-    return test_data_set,train_data_set
+            test_index[i]=test_index[i]+1
+        else:
+            pass
+    return train_data_set,test_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
     with tf.variable_scope('encoder', reuse=reuse):#reuse非常有用，可以避免设置
@@ -204,7 +205,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         return net
 def train_test():
     data_addr = sorted(glob.glob('.\\data\\Skeleton5\\*.txt'))# all data
-    train_dataset,test_dataset=prepar_data(data_addr, n_classes)
+    train_dataset,test_dataset=prepar_data_matrix(data_addr, n_classes)
     print(train_dataset.shape)
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="x")
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="q")
