@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
+import shutil
 #train setting
 '''
 training:使用4个support样本，利用4个query,对模型进行训练
@@ -81,24 +82,29 @@ def normalize_skeleton(skeletA):#第三个点刚刚好是hip center
         skeletA[:,:,i]=Normalize(skeletA[:,:,i],factor)
     im=resize(skeletA)
     return im
-def ouput_3_gray_imge(diff_feature,path):
-    prename = path.split('\\')[-1]
-    print(prename)
-    # x_im=diff_feature[:, :, 0]*255
-    # im = Image.fromarray(x_im.astype(np.uint8))
-    # im.save((".\\data\\Skeleton6\\img\\x_%s.bmp") % (prename))
-    #
-    # y_im=diff_feature[:, :, 1]*255
-    # im = Image.fromarray(y_im.astype(np.uint8))
-    # im.save((".\\data\\Skeleton6\\img\\y_%s.bmp") % (prename))
-    #
-    # z_im=diff_feature[:, :, 2]*255
-    # im = Image.fromarray(z_im.astype(np.uint8))
-    # im.save((".\\data\\Skeleton6\\img\\z_%s.bmp") % (prename))
+def output_img(diff_feature, path,type=1):
 
-    rgb=diff_feature*255
-    im=Image.fromarray(rgb.astype(np.uint8))
-    im.save((".\\data\\Skeleton6\\img\\%s.bmp") % (prename))
+    (filepath, name) = os.path.split(path)
+    imgdir=filepath+"\\img"
+    if not os.path.exists(imgdir):
+        os.mkdir(imgdir)
+    print(name)
+    if type==3:
+        x_im=diff_feature[:, :, 0]*255
+        im = Image.fromarray(x_im.astype(np.uint8))
+        im.save(("%s\\x_%s.bmp") % (imgdir,name))
+        y_im=diff_feature[:, :, 1]*255
+        im = Image.fromarray(y_im.astype(np.uint8))
+        im.save(("%s\\y_%s.bmp") % (imgdir,name))
+        z_im=diff_feature[:, :, 2]*255
+        im = Image.fromarray(z_im.astype(np.uint8))
+        im.save(("%s\\z_%s.bmp") % (imgdir,name))
+    elif type==1:
+        rgb=diff_feature*255
+        im=Image.fromarray(rgb.astype(np.uint8))
+        im.save(("%s\\%s.bmp") % (imgdir,name))
+    else:
+        pass
 def prepar_data(data_addr,n_classes,offset=0):
     train_set={}
     test_set={}
@@ -115,7 +121,7 @@ def prepar_data(data_addr,n_classes,offset=0):
         token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:3])-1#class
         sample = normalize_skeleton(sample)
-        # ouput_3_gray_imge(sample,addr)
+        output_img(sample,addr,1)
         if(token[3]=="v3"):#小于8的
             test_set[i].append(sample)
         else:
