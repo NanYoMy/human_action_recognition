@@ -70,19 +70,25 @@ def getTestBatch(test_set,action):
     return len(sample_per_action),query
 
 def data_fix(feature,ref_point_index=3):
+
     for i in range(feature.shape[1]):
         feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
     feature_new=np.delete(feature,ref_point_index,axis=0)
     return feature_new
 
-def normalize_skeleton(skeletA):#第三个点刚刚好是hip center
+# def data_fix(feature,ref_point_index=3):
+#     feature_new=np.zeros([feature.shape[0],feature.shape[1]-1,feature.shape[2]],dtype=np.float)
+#     for i in range(feature.shape[1]-1):
+#         feature_new[:,i,:]=feature[:,i+1,:]-feature[:,i,:]
+#     return feature_new
 
-    factor=get_channal_max_range(skeletA)
-    for i in range(skeletA.shape[2]):
-        skeletA[:,:,i]=Normalize(skeletA[:,:,i],factor)
-    im=resize(skeletA)
+def normalize_skeleton(skelet):#第三个点刚刚好是hip center
+    factor=get_channal_max_range(skelet)
+    for i in range(skelet.shape[2]):
+        skelet[:, :, i]=Normalize(skelet[:, :, i], factor)
+    im=resize(skelet)
     return im
-def output_img(diff_feature, path,type=1):
+def output_img(skeleimg, path, type=1):
 
     (filepath, name) = os.path.split(path)
     imgdir=filepath+"\\img"
@@ -90,21 +96,25 @@ def output_img(diff_feature, path,type=1):
         os.mkdir(imgdir)
     print(name)
     if type==3:
-        x_im=diff_feature[:, :, 0]*255
+        x_im= skeleimg[:, :, 0] * 255
         im = Image.fromarray(x_im.astype(np.uint8))
         im.save(("%s\\x_%s.bmp") % (imgdir,name))
-        y_im=diff_feature[:, :, 1]*255
+        y_im= skeleimg[:, :, 1] * 255
         im = Image.fromarray(y_im.astype(np.uint8))
         im.save(("%s\\y_%s.bmp") % (imgdir,name))
-        z_im=diff_feature[:, :, 2]*255
+        z_im= skeleimg[:, :, 2] * 255
         im = Image.fromarray(z_im.astype(np.uint8))
         im.save(("%s\\z_%s.bmp") % (imgdir,name))
     elif type==1:
-        rgb=diff_feature*255
+        rgb= skeleimg * 255
         im=Image.fromarray(rgb.astype(np.uint8))
         im.save(("%s\\%s.bmp") % (imgdir,name))
     else:
         pass
+def check_valid(sample):
+    if sample.shape[1] < 5:
+        return False
+    return True
 def prepar_data(data_addr,n_classes,offset=0):
     train_set={}
     test_set={}
@@ -113,13 +123,12 @@ def prepar_data(data_addr,n_classes,offset=0):
         train_set[i]=[]
     for addr in data_addr:
         sample = load_txt_data(addr)# skelet是numpy的ndarray类型
-
-        if sample.shape[1]<5:
-            print("=========eroor======="+addr)
+        if not check_valid(sample):
+            print("=========eroor=======" + addr)
             continue
-        sample = data_fix(sample, ref_point_index=1)
         token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:3])-1#class
+        sample = data_fix(sample, ref_point_index=1)
         sample = normalize_skeleton(sample)
         output_img(sample,addr,1)
         if(token[3]=="v3"):#小于8的
@@ -207,7 +216,6 @@ def train_test():
     emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
     emb_dim = tf.shape(emb_x)[-1] # the last dimesion
     emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
-
     emb_q = encoder(tf.reshape(q, [numb_queris_class * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
 
     dists = euclidean_distance(emb_q, emb_x)
@@ -248,7 +256,6 @@ def train_test():
     for epi in range(n_test_episodes):
         epi_classes = np.random.permutation(n_classes)[:n_test_way]
         # epi_classes=np.arange(n_test_way)[:n_test_way]
-        # n_test_query,query=getTestBatch(test_dataset,action)
         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
         # query2 = np.zeros([1,n_test_query,im_height,im_width,channels],dtype=np.float32)
 
@@ -259,7 +266,7 @@ def train_test():
         total=0
         correct=0
         for action in train_dataset.keys():
-            count,query=getTestBatch(train_dataset,action)
+            count,query=getTestBatch(test_dataset,action)
             label_id=getLabelForAction(action, epi_classes)
             labels = np.tile(np.array([label_id])[:, np.newaxis], (1, count)).astype(np.uint8)
             ls, ac,log_p,distance,out_emb_q,out_emb_x = sess.run([ce_loss, acc,log_p_y,dists,emb_q,emb_x], feed_dict={x: support, q: query, y: labels})
