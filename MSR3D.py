@@ -17,7 +17,7 @@ inference:使用4个从train样本中得到的support样本，对剩余的24样�
 '''
 n_joint=20
 n_episodes =800
-n_classes=10
+n_classes=20
 n_way = 10
 n_support = 3
 n_query =3
@@ -41,9 +41,9 @@ def euclidean_distance(query=None, prototype=None): # a是query b是prototype
 def load_txt_data(path):
     skelet = np.genfromtxt(path, delimiter="  ", dtype=np.float32)#1080 * 4
     frame=int(skelet.shape[0]/n_joint)
-    skelet=skelet.reshape(n_joint,frame,4)
+    skelet=skelet.reshape(frame,n_joint,4)
     skelet=np.delete(skelet,3,axis=2)
-    return skelet
+    return skelet.swapaxes(1,0)
 def Normalize(data,factor):
     m = np.mean(data)
     mx = data.max()
@@ -128,9 +128,9 @@ def prepar_data(data_addr,n_classes,offset=0):
             continue
         token = addr.split('\\')[-1].split('_')
         i=int(token[0][1:3])-1#class
-        sample = data_fix(sample, ref_point_index=1)
+        # sample = data_fix(sample, ref_point_index=1)
         sample = normalize_skeleton(sample)
-        output_img(sample,addr,1)
+        output_img(sample,addr,1)#1表示RGB 3表示r g b gray-scale
         if(token[3]=="v3"):#小于8的
             test_set[i].append(sample)
         else:
