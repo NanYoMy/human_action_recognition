@@ -16,7 +16,7 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=20
-n_episodes =100
+n_episodes =500
 n_classes=20
 n_way = 20
 n_support = 5
