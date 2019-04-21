@@ -16,11 +16,11 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=20
-n_episodes =500
+n_episodes =300
 n_classes=20
 n_way = 20
-n_support = 5
-n_query =5
+n_support = 4
+n_query =4
 #test setting
 n_train_sample=10
 n_test_episodes = 5
@@ -294,7 +294,7 @@ def train_test():
 
         total=0
         correct=0
-        for action in train_dataset.keys():
+        for action in test_dataset.keys():
             count,query=getTestBatch(test_dataset,action)
             label_id=getLabelForAction(action, epi_classes)
             labels = np.tile(np.array([label_id])[:, np.newaxis], (1, count)).astype(np.uint8)
