@@ -16,11 +16,11 @@ training:使用4个support样本，利用4个query,对模型进行训练
 inference:使用4个从train样本中得到的support样本，对剩余的24样本进行评估，
 '''
 n_joint=20
-n_episodes =800
+n_episodes =100
 n_classes=20
-n_way = 10
-n_support = 3
-n_query =3
+n_way = 20
+n_support = 5
+n_query =5
 #test setting
 n_train_sample=10
 n_test_episodes = 5
@@ -115,23 +115,52 @@ def check_valid(sample):
     if sample.shape[1] < 5:
         return False
     return True
+
+def readErrorTag(path):
+    error=[]
+    for line in open(path):
+        error.append(line.rstrip("\n"))
+    return error
+
+
+def exist_tag(error, tag):
+    for i in error:
+        if i==tag:
+            return True
+    return False
+
 def prepar_data(data_addr,n_classes,offset=0):
     train_set={}
     test_set={}
     for i in range(n_classes):
         test_set[i]=[]
         train_set[i]=[]
+
+    error=readErrorTag('./data/Skeleton2/MSRAction3DSkeleton(20joints)_all/error_data.txt')
+    error2 = readErrorTag('./data/Skeleton2/MSRAction3DSkeleton(20joints)_all/error_data2.txt')
     for addr in data_addr:
+
+
         sample = load_txt_data(addr)# skelet是numpy的ndarray类型
         if not check_valid(sample):
             print("=========eroor=======" + addr)
             continue
-        token = addr.split('\\')[-1].split('_')
+        tag=addr.split('\\')[-1]
+        if exist_tag(error,tag):
+            continue
+        if exist_tag(error2,tag):
+            print("error-================================")
+            print(tag)
+            print(get_channal_max_range(sample))
+            print("error-================================")
+            continue
+        token = tag.split('_')
         i=int(token[0][1:3])-1#class
-        # sample = data_fix(sample, ref_point_index=1)
+        sample = data_fix(sample, ref_point_index=1)
         sample = normalize_skeleton(sample)
-        output_img(sample,addr,1)#1表示RGB 3表示r g b gray-scale
-        if(token[3]=="v3"):#小于8的
+        subject=int(token[1][1:3])
+        # output_img(sample,addr,1)#1表示RGB 3表示r g b gray-scale
+        if(subject%2==0):#小于8的
             test_set[i].append(sample)
         else:
             train_set[i].append(sample)
@@ -199,9 +228,9 @@ def format_data_matrix(data,length):
 
     return matrix_set
 def train_test():
-    data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)_all\\*.txt'))
+    data_addr = sorted(glob.glob('.\\data\\Skeleton2\\MSRAction3DSkeleton(20joints)_all\\*skeleton.txt'))
     train_dataset,test_dataset=prepar_data(data_addr, n_classes)
-    train_matrix=format_data_matrix(train_dataset,20)
+    train_matrix=format_data_matrix(train_dataset,n_train_sample)
     x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="x")
     q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name="q")
     x_shape = tf.shape(x)
