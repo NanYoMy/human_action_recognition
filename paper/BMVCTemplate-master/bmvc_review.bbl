@@ -1,0 +1,141 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bruna et~al.(2013)Bruna, Zaremba, Szlam, and LeCun]{bruna2013spectral}
+Joan Bruna, Wojciech Zaremba, Arthur Szlam, and Yann LeCun.
+\newblock Spectral networks and locally connected networks on graphs.
+\newblock \emph{arXiv preprint arXiv:1312.6203}, 2013.
+
+\bibitem[Chen et~al.(2015)Chen, Jafari, and Kehtarnavaz]{chen2015utd}
+Chen Chen, Roozbeh Jafari, and Nasser Kehtarnavaz.
+\newblock Utd-mhad: A multimodal dataset for human action recognition utilizing
+  a depth camera and a wearable inertial sensor.
+\newblock In \emph{2015 IEEE International conference on image processing
+  (ICIP)}, pages 168--172. IEEE, 2015.
+
+\bibitem[Davis et~al.(2007)Davis, Kulis, Jain, Sra, and
+  Dhillon]{davis2007information}
+Jason~V Davis, Brian Kulis, Prateek Jain, Suvrit Sra, and Inderjit~S Dhillon.
+\newblock Information-theoretic metric learning.
+\newblock In \emph{Proceedings of the 24th international conference on Machine
+  learning}, pages 209--216. ACM, 2007.
+
+\bibitem[Gaglio et~al.(2015)Gaglio, Re, and Morana]{gaglio2015human}
+Salvatore Gaglio, Giuseppe~Lo Re, and Marco Morana.
+\newblock Human activity recognition process using 3-d posture data.
+\newblock \emph{IEEE Transactions on Human-Machine Systems}, 45\penalty0
+  (5):\penalty0 586--597, 2015.
+
+\bibitem[Ke et~al.(2017)Ke, Bennamoun, An, Sohel, and Boussaid]{ke2017new}
+Qiuhong Ke, Mohammed Bennamoun, Senjian An, Ferdous Sohel, and Farid Boussaid.
+\newblock A new representation of skeleton sequences for 3d action recognition.
+\newblock In \emph{Proceedings of the IEEE conference on computer vision and
+  pattern recognition}, pages 3288--3297, 2017.
+
+\bibitem[Li et~al.(2017{\natexlab{a}})Li, Dai, Cheng, Chen, Lin, and
+  He]{li2017skeleton_2}
+Bo~Li, Yuchao Dai, Xuelian Cheng, Huahui Chen, Yi~Lin, and Mingyi He.
+\newblock Skeleton based action recognition using translation-scale invariant
+  image mapping and multi-scale deep cnn.
+\newblock In \emph{2017 IEEE International Conference on Multimedia \& Expo
+  Workshops (ICMEW)}, pages 601--604. IEEE, 2017{\natexlab{a}}.
+
+\bibitem[Li et~al.(2017{\natexlab{b}})Li, Zhong, Xie, and Pu]{li2017skeleton}
+Chao Li, Qiaoyong Zhong, Di~Xie, and Shiliang Pu.
+\newblock Skeleton-based action recognition with convolutional neural networks.
+\newblock In \emph{2017 IEEE International Conference on Multimedia \& Expo
+  Workshops (ICMEW)}, pages 597--600. IEEE, 2017{\natexlab{b}}.
+
+\bibitem[Li et~al.(2018)Li, Cui, Zheng, Xu, and Yang]{li2018spatio}
+Chaolong Li, Zhen Cui, Wenming Zheng, Chunyan Xu, and Jian Yang.
+\newblock Spatio-temporal graph convolution for skeleton based action
+  recognition.
+\newblock In \emph{Thirty-Second AAAI Conference on Artificial Intelligence},
+  2018.
+
+\bibitem[Liu et~al.(2018{\natexlab{a}})Liu, Shahroudy, Xu, Kot, and
+  Wang]{liu2018skeleton}
+Jun Liu, Amir Shahroudy, Dong Xu, Alex~C Kot, and Gang Wang.
+\newblock Skeleton-based action recognition using spatio-temporal lstm network
+  with trust gates.
+\newblock \emph{IEEE transactions on pattern analysis and machine
+  intelligence}, 40\penalty0 (12):\penalty0 3007--3021, 2018{\natexlab{a}}.
+
+\bibitem[Liu et~al.(2018{\natexlab{b}})Liu, Wang, Duan, Abdiyeva, and
+  Kot]{liu2018skeleton_13}
+Jun Liu, Gang Wang, Ling-Yu Duan, Kamila Abdiyeva, and Alex~C Kot.
+\newblock Skeleton-based human action recognition with global context-aware
+  attention lstm networks.
+\newblock \emph{IEEE Transactions on Image Processing}, 27\penalty0
+  (4):\penalty0 1586--1599, 2018{\natexlab{b}}.
+
+\bibitem[Liu et~al.(2017)Liu, Liu, and Chen]{liu2017enhanced}
+Mengyuan Liu, Hong Liu, and Chen Chen.
+\newblock Enhanced skeleton visualization for view invariant human action
+  recognition.
+\newblock \emph{Pattern Recognition}, 68:\penalty0 346--362, 2017.
+
+\bibitem[Mishra et~al.(2018)Mishra, Verma, Reddy, Arulkumar, Rai, and
+  Mittal]{mishra2018generative}
+Ashish Mishra, Vinay~Kumar Verma, M~Shiva~Krishna Reddy, S~Arulkumar, Piyush
+  Rai, and Anurag Mittal.
+\newblock A generative approach to zero-shot and few-shot action recognition.
+\newblock In \emph{2018 IEEE Winter Conference on Applications of Computer
+  Vision (WACV)}, pages 372--380. IEEE, 2018.
+
+\bibitem[Olah and Carter(2016)]{olah2016attention}
+Chris Olah and Shan Carter.
+\newblock Attention and augmented recurrent neural networks.
+\newblock \emph{Distill}, 1\penalty0 (9):\penalty0 e1, 2016.
+
+\bibitem[Pham et~al.(2017)Pham, Khoudour, Crouzil, Zegers, and
+  Velastin]{pham2017learning}
+Huyhieu Pham, Louahdi Khoudour, Alain Crouzil, Pablo Zegers, and Sergio~A
+  Velastin.
+\newblock Learning and recognizing human action from skeleton movement with
+  deep residual neural networks.
+\newblock \emph{international conference on pattern recognition}, 2017.
+
+\bibitem[Shi et~al.(2018)Shi, Zhang, Cheng, and Lu]{shi2018non-local}
+Lei Shi, Yifan Zhang, Jian Cheng, and Hanqing Lu.
+\newblock Non-local graph convolutional networks for skeleton-based action
+  recognition.
+\newblock \emph{arXiv: Computer Vision and Pattern Recognition}, 2018.
+
+\bibitem[Si et~al.(2019)Si, Chen, Wang, Wang, and Tan]{si2019attention}
+Chenyang Si, Wentao Chen, Wei Wang, Liang Wang, and Tieniu Tan.
+\newblock An attention enhanced graph convolutional lstm network for
+  skeleton-based action recognition.
+\newblock \emph{arXiv preprint arXiv:1902.09130}, 2019.
+
+\bibitem[Snell et~al.(2017)Snell, Swersky, and Zemel]{snell2017prototypical}
+Jake Snell, Kevin Swersky, and Richard Zemel.
+\newblock Prototypical networks for few-shot learning.
+\newblock In \emph{Advances in Neural Information Processing Systems}, pages
+  4077--4087, 2017.
+
+\bibitem[Wang et~al.(2016)Wang, Li, Hou, and Li]{wang2016action}
+Pichao Wang, Zhaoyang Li, Yonghong Hou, and Wanqing Li.
+\newblock Action recognition based on joint trajectory maps using convolutional
+  neural networks.
+\newblock In \emph{Proceedings of the 24th ACM international conference on
+  Multimedia}, pages 102--106. ACM, 2016.
+
+\bibitem[Yang et~al.(2018)Yang, He, and Porikli]{yang2018one}
+Hongtao Yang, Xuming He, and Fatih Porikli.
+\newblock One-shot action localization by learning sequence matching network.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition}, pages 1450--1459, 2018.
+
+\bibitem[Zhu et~al.(2016)Zhu, Lan, Xing, Zeng, Li, Shen, and Xie]{zhu2016co}
+Wentao Zhu, Cuiling Lan, Junliang Xing, Wenjun Zeng, Yanghao Li, Li~Shen, and
+  Xiaohui Xie.
+\newblock Co-occurrence feature learning for skeleton based action recognition
+  using regularized deep lstm networks.
+\newblock In \emph{Thirtieth AAAI Conference on Artificial Intelligence}, 2016.
+
+\end{thebibliography}
