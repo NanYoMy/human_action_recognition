@@ -156,10 +156,10 @@ def prepar_data(data_addr,n_classes,offset=0):
             continue
         token = tag.split('_')
         i=int(token[0][1:3])-1#class
-        sample = data_fix(sample, ref_point_index=1)
+        # sample = data_fix(sample, ref_point_index=1)
         sample = normalize_skeleton(sample)
         subject=int(token[1][1:3])
-        # output_img(sample,addr,1)#1表示RGB 3表示r g b gray-scale
+        #output_img(sample,addr,1)#1表示RGB 3表示r g b gray-scale
         if(subject%2==0):#小于8的
             test_set[i].append(sample)
         else:
