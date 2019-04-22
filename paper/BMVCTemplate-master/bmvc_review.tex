@@ -68,11 +68,12 @@ The remainder of the paper is organized as follows. In Sec.2 we briefly review m
 	\label{fig:1}	
 \end{figure}
 \section{Related Work}
-Papers must be 9~pages in length, {\em excluding} the bibliography.
 Skeleton sequence data contains strong interpretive feature for the action recognition task. A rich of deep action recognition models had proposed on such kind of data. Specifically, these methods can be sumaried as three main streams. 
+
 The first streams usually encode the skeleton sequence into a skeleton-image. Different skeleton-image encoders are proposed to capture the feature of actions. Wang~\cite{wang2016action} introduce a compact and effective method to encode spatiotemporal information carried in 3D skeleton sequences into a Joint Trajectory Maps (JTM). Pham~\cite{pham2017learning} and Li~\cite{li2017skeleton} rearrange the pixels in RGB skeleton images to obtain a better representation of the movement. Furthermore, Liu~\cite{liu2017enhanced} design a skeleton visualization method to represent a skeleton sequence as a series of visual and motion enhanced color images. Having encoded skeleton sequences into skeleton images, a variety of CNN networks(CNN~\cite{wang2016action}, multi-scale CNN~\cite{li2017skeleton_2}, DeepResidualNeuralNetworks~\cite{pham2017learning}, multi-stream CNN~\cite{liu2017enhanced}) are constructed to classify the indeed action of the skeleton image. 
 
 The second steam is inspired by the RNN network, whose recurrent structure can boil a sequence data down into a high-level understanding ~\cite{olah2016attention}. For better performance, they tend to adopt the LSTM to process the skeleton sequence data. Zhu~\cite{zhu2016co} introduce an end-to-end fully connected deep LSTM network with a designed regularization, through which can learn the co-occurrence feature of the skeleton joints. Based on LSTM, Liu~\cite{liu2018skeleton} design a skeleton tree traversal method and a new gating mechanism to achieve a robust representation of the input sequence data. To further, Liu~\cite{liu2018skeleton_13} also add attention ability to the LSTM network, which is capable of focusing on the informative joints of the skeleton.
+
 The last one is based on graph convolutional network ~\cite{bruna2013spectral}, which can be applied directly to the raw skeleton data. Shi\cite{shi2018non-local} present a novel two-stream nonlocal graph convolutional network for the recognition task. Li~\cite{li2018spatio} proposed a spatio-temporal graph convolution approach with multi-scale kernels to recognize the actions. Si\cite{si2019attention} proposes a novel Attention Enhanced Graph Convolutional LSTM Network, which can not only capture discriminative features in spatial configuration and temporal dynamics but also explore the co-occurrence relationship between spatial and temporal domains.
 \section{Proposed Method}
 \subsection*{Skeleton Image Encoder}
@@ -149,14 +150,8 @@ The purpose of our training algorithm is to address the learnable parameter of $
 
 $$loss(y=y^\ast | s^\ast,C_{support},W)=\log(\frac{\exp (-d(F_W(encode(s^\ast)),c_{y^\ast}))}{\sum_{i=1}^{k}\exp((F_W(encode(s^\ast)),c_i)})$$
 
-Figure \ref{fig:4} illustrates the detail computation of the cross-entropy loss of the model. Having the loss function defined, we optimize the parameters of the model in few shot fashion. For each training iteration, we randomly divided the labeled samples into the support and query set. With which the cross-entropy loss of the model will be calculated to updated the parameter of the network. A detail description of training phase is provided in algorithm \ref{alg:2}.
+Having the loss function defined, we optimize the parameters of the model in few shot fashion. For each training iteration, we randomly divided the labeled samples into the support and query set. With which the cross-entropy loss of the model will be calculated to updated the parameter of the network. A detail description of training phase is provided in algorithm \ref{alg:2}.
 
-\begin{figure}[htb] 
-	\centering
-	\includegraphics[scale=1]{images/Figure_5.png}
-	\caption{The architecture of the mapping function $F_W$. The first three dilated-conv-dense blocks are designed to enhance the robust representation of the skeleton image. Meanwhile, the later three convolution blocks are for projecting the feature into a discriminative space. And the final flatten layer will convert the feature into a one-dimension tensor. Weights and biases of the network are corresponding to the parameter of the mapping function.}
-	\label{fig:5}	
-\end{figure}
 
 \begin{algorithm}[htb]
 	\caption{the training process of action recognition model.}
@@ -171,7 +166,7 @@ Figure \ref{fig:4} illustrates the detail computation of the cross-entropy loss 
 	\Repeat{}
 	{
 			\ForEach{\bf{i in K}}
-		{
+		{z
 			$\mathbf{I^i}=\{I^i_1,I^i_2,\cdots I^i_N\}=\mathbf{encode}(S^i)$
 			
 			$\mathbf{F^i}=\{F^i_1,F^i_2,\cdots F^i \{ N_s \} \}=\mathbf{F_w(I^i)}$
@@ -207,7 +202,7 @@ Figure \ref{fig:4} illustrates the detail computation of the cross-entropy loss 
 
 
 \section{Experiments}
-As mentioned before, the whole architecture of our model is provided in Figure \ref{fig:1}. we construct the mapping function as convolution network, whose structure is illustrated in Figure \ref{fig:2}. It composed of three dilated-conv-dense blocks, three convolution blocks and a flatten layer. We implemented our method on Tensorflow with GTX 1080 and evaluated it on two popular benchmarks. We train our model under few-shot setup. But it still achieves a comparable accuracy to the current existing fully supervised algorithm. Besides, we also show our model can adjust the unseen classes with a few labeled samples without retraining the parameter of the mapping function. A reproducible code is available in github. \url{https://github.com/NanYoMy/human_action_recognition}
+As mentioned before, the whole architecture of our model is provided in Figure \ref{fig:1}. we construct the mapping function as convolution network, The structure is illustrated in Figure \ref{fig:2}. It composed of three dilated-conv-dense blocks, three convolution blocks and a flatten layer. We implemented our method on Tensorflow with GTX 1080 and evaluated it on two popular benchmarks. We train our model under few-shot setup. But it still achieves a comparable accuracy to the current existing fully supervised algorithm. Besides, we also show our model can adjust the unseen classes with a few labeled samples without retraining the parameter of the mapping function. A reproducible code is available in github. \url{https://github.com/NanYoMy/human_action_recognition}
 
 \subsection*{UTD-MHAD}
 The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times~\cite{chen2015utd}. So, we get 32 samples per action. From each type of action, we select 8 sequences as the training set, and leave out 24 samples for testing. For evaluation, we randomly generated 4 support samples per class from the training set to estimate the prototypes of the model. Table 1 shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs a quarter of samples for training without any data augmentation mechanism ~\cite{pham2017learning,pham2017learning}, but still, we obtain an improvement of $1\%$ over the state-of-the-art .
@@ -270,9 +265,9 @@ To investigate the performance of the model when dealing with the samples from t
 			\hline\hline
 			UTD-MHAD & (1) right arm swipe to the left, (2) right arm swipe to the right, (3) right hand wave, (4) two hand front clap, (5) right arm throw, (6) cross arms in the chest, (7) basketball shoot, (8) right hand draw x, (9) right hand draw circle (clockwise), (10) right hand draw circle (counter clockwise), (11) draw triangle, (12) bowling (right hand), (13) front boxing, (14) baseball swing from right, (15) tennis right hand forehand swing, (16) arm curl (two arms), (17) tennis serve & (18) two hand push, (19) right hand knock on door, (20) right hand catch an object, (21) right hand pick up and throw, (22) jogging in place, (23) walking in place, (24) sit to stand, (25) stand to sit, (26) forward lunge (left foot forward), (27) squat (two arms stretch out)\\
 			\hline
-			KARD & 1 Horizontal arm wave, 2 High arm wave
-			3 Two hand wave, 4 Catch Cap, 5 High throw, 6 Draw X, 7 Draw Tick, 8 Toss Paper, 9 Forward Kick, 10 Side Kick
-			& 1 Take Umbrella, 12 Bend, 13 Hand Clap, 14 Walk, 15 Phone Call, 16 Drink, 17 Sit down, 18 Stand up \\
+			KARD & (1) Horizontal arm wave, (2) High arm wave
+			(3) Two hand wave, (4) Catch Cap, (5) High throw, (6) Draw X, (7) Draw Tick, (8) Toss Paper, (9) Forward Kick, (10) Side Kick
+			& (11) Take Umbrella, (12) Bend, (13) Hand Clap, (14) Walk, (15) Phone Call, (16) Drink, (17) Sit down, (18) Stand up \\
 			\hline
 		\end{tabular}	
 	\end{center}
@@ -285,7 +280,7 @@ To investigate the performance of the model when dealing with the samples from t
 			\hline
 			& UTD-MHAD & KARD\\
 			\hline\hline
-			5 support samples & (1) 93.5\% & 95.88\% \\
+			5 support samples & 93.5\% & 95.88\% \\
 			1 support samples & 82.54\%
 			& 87.3\%\\
 			\hline
@@ -294,9 +289,6 @@ To investigate the performance of the model when dealing with the samples from t
 	\caption{ the classification accuracies of the model with different number of support samples on UTD-MHAD and KARD datasets. All accuracy result is averaged over 1000 test episodes. }	
 	\label{tab:4}
 \end{table*}
-
-
-
 
 
 \section{Conclusion}
