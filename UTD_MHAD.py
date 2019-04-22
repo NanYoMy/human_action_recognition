@@ -21,11 +21,12 @@ n_sample_per_class=32
 n_way = n_classes
 n_support = 4
 n_query = 4
+n_train_sample=int(n_sample_per_class/2)
 #test setting
 n_test_episodes = 1000
 n_test_way = n_classes
 n_test_support = n_support
-n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
+n_test_query = int(n_sample_per_class/2)#n_test_shot+n_test_query<=22
 
 im_height,im_width,  channels = 20, 60, 3
 h_dim = 8
@@ -90,32 +91,25 @@ def ouput_3_gray_imge(diff_feature,path):
 
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
-    for addr in data_addr:
-        skelet = load_data(addr)# skelet是numpy的ndarray类型
-        token = addr.split('\\')[-1].split('_')
-        i=int(token[0][1:])-1-offset#class
-        j=(int(token[1][1:])-1)*4+int(token[2][1:])-1#id
-        sample=get_diff_feature(skelet,9)
-        #ouput_3_gray_imge(sample, addr)
-        data_set[i,j]=sample
+
     return data_set
 def prepar_data(data_addr,n_classes):
-    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
-    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
-    all_data_set=getall(data_addr, n_classes)
-
-    for i in range(n_classes):
-        itr_train = 0
-        for j in range(n_sample_per_class):
-            if j%4==0:
-                train_data_set[i,itr_train]=all_data_set[i,j]
-                itr_train+=1#n_query+n_shot training sample
-    for i in range(n_classes):
-        itr_test = 0
-        for j in range(n_sample_per_class):
-            if j % 4 != 0:
-                test_data_set[i, itr_test] = all_data_set[i, j]
-                itr_test += 1
+    train_data_set = np.zeros([n_classes, int(n_sample_per_class/2), im_height, im_width, 3], dtype=np.float32)
+    test_data_set = np.zeros([n_classes, int(n_sample_per_class/2), im_height, im_width, 3], dtype=np.float32)
+    train_index=np.zeros([n_classes],dtype=np.int)
+    test_index = np.zeros([n_classes],dtype=np.int)
+    for addr in data_addr:
+        skelet = load_data(addr)  # skelet是numpy的ndarray类型
+        token = addr.split('\\')[-1].split('_')
+        i = int(token[0][1:]) - 1 # class
+        sample = get_diff_feature(skelet, 9)
+        # ouput_3_gray_imge(sample, addr)
+        if( int(token[1][1:])%2==1):
+            train_data_set[i,train_index[i]]=sample
+            train_index[i]+=1
+        else:
+            test_data_set[i,test_index[i]]=sample
+            test_index[i]+=1
     return test_data_set,train_data_set
 
 def encoder(x, h_dim, z_dim,reuse=False):
@@ -234,7 +228,7 @@ def train_test():
             选n_shot+n_query进行训练
             n_shot是作为参数，n_query作为训练样本
             '''
-            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            selected = np.random.permutation(n_train_sample)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
@@ -244,7 +238,7 @@ def train_test():
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
 
     saver.save(sess, ckpt_path)
-    print('Testing normal classes...')
+
     avg_acc = 0.
     avg_ls=0.
     for epi in range(n_test_episodes):
@@ -253,9 +247,9 @@ def train_test():
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
+            selected_support = np.random.permutation(n_train_sample)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
+            support[i] = test_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
@@ -270,11 +264,6 @@ def train_test():
     avg_ls/=n_test_episodes
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
 
-    '''
-    #， 训练样本的修改：现在每次的都是从32个样本中随机抽取5个作为支持向量，5个作为query向量。能否改成只有在10个样本中进行随机抽取， 完成
-    #， 测试的修改：分27类 现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
-    图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
-    '''
 def load_test():
 
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))  # all data

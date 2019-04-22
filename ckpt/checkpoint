@@ -1,2 +1,2 @@
-model_checkpoint_path: "SUB_Train_Test.py"
-all_model_checkpoint_paths: "SUB_Train_Test.py"
+model_checkpoint_path: "UTD_MHAD_4_Support.py"
+all_model_checkpoint_paths: "UTD_MHAD_4_Support.py"
