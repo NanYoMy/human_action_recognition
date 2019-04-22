@@ -113,7 +113,7 @@ def prepar_data(data_addr,n_classes):
         token = addr.split('\\')[-1].split('_')
         i = int(token[0][1:]) - 1 # class
         sample = Normalize_Skeleton(skelet, 9)
-        output_img(sample, addr)
+        # output_img(sample, addr)
         if( int(token[1][1:])%2==1):
             train_data_set[i,train_index[i]]=sample
             train_index[i]+=1
@@ -128,6 +128,8 @@ def encoder(x, h_dim, z_dim,reuse=False):
         #---------#
 
         block_1_in=tf.layers.conv2d(x, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')
+        block_1_in = tf.nn.relu(block_1_in)
+
         block_1_out = tf.layers.conv2d(block_1_in, h_dim, kernel_size=[2, 3], dilation_rate=[2, 2],padding='SAME')  # 64 filters, each filter will generate a feature map.
         # block_1_out = tf.contrib.layers.batch_norm(block_1_out, updates_collections=None, decay=0.99, scale=True, center=True)
         block_1_out = tf.nn.relu(block_1_out)
@@ -259,7 +261,7 @@ def train_test():
 
             selected_support = np.random.permutation(n_train_sample)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = test_dataset[epi_cls, selected_support]#从训练集合取support样本
+            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
