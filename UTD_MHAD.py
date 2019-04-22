@@ -73,20 +73,29 @@ def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip cent
         im[:,:,i]=Normalize(im[:,:,i],factor)
     sample=resize(im)
     return sample
-def ouput_3_gray_imge(diff_feature,path):
-    prename = path.split('\\')[-1]
-    print(prename)
-    x_im=diff_feature[:, :, 0]*255
-    im = Image.fromarray(x_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\x_%s.bmp") % (prename))
+def output_img(skeleimg, path, type=1):
 
-    y_im=diff_feature[:, :, 1]*255
-    im = Image.fromarray(y_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\y_%s.bmp") % (prename))
-
-    z_im=diff_feature[:, :, 2]*255
-    im = Image.fromarray(z_im.astype(np.uint8))
-    im.save((".\\data\\Skeleton\\data\\z_%s.bmp") % (prename))
+    (filepath, name) = os.path.split(path)
+    imgdir=filepath+"\\img"
+    if not os.path.exists(imgdir):
+        os.mkdir(imgdir)
+    print(name)
+    if type==3:
+        x_im= skeleimg[:, :, 0] * 255
+        im = Image.fromarray(x_im.astype(np.uint8))
+        im.save(("%s\\x_%s.bmp") % (imgdir,name))
+        y_im= skeleimg[:, :, 1] * 255
+        im = Image.fromarray(y_im.astype(np.uint8))
+        im.save(("%s\\y_%s.bmp") % (imgdir,name))
+        z_im= skeleimg[:, :, 2] * 255
+        im = Image.fromarray(z_im.astype(np.uint8))
+        im.save(("%s\\z_%s.bmp") % (imgdir,name))
+    elif type==1:
+        rgb= skeleimg * 255
+        im=Image.fromarray(rgb.astype(np.uint8))
+        im.save(("%s\\%s.bmp") % (imgdir,name))
+    else:
+        pass
 
 
 def getall(data_addr,n_classes,offset=0):
@@ -103,7 +112,7 @@ def prepar_data(data_addr,n_classes):
         token = addr.split('\\')[-1].split('_')
         i = int(token[0][1:]) - 1 # class
         sample = get_diff_feature(skelet, 9)
-        # ouput_3_gray_imge(sample, addr)
+        output_img(sample, addr)
         if( int(token[1][1:])%2==1):
             train_data_set[i,train_index[i]]=sample
             train_index[i]+=1
