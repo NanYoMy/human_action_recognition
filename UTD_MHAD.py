@@ -43,7 +43,7 @@ def euclidean_distance(query=None, prototype=None): # a是query b是protypical
 def load_data(path):
     data = sio.loadmat(path)
     skelet=data['d_skel']
-    #print(skelet.shape)#(20,3,48) 20个点，每个点有xyz, 一共48帧，这里需要处理不帧数的样本
+    skelet = skelet.swapaxes(1, 2)
     return skelet
 def Normalize(data,factor):
     m = np.mean(data)
@@ -63,11 +63,12 @@ def resize(diff_feature):
     sample[:, :, 2] = transform.resize(diff_feature[:, :, 2], (im_height,im_width ), mode='reflect', anti_aliasing=True)
     return sample
 # 使用其余点减去中心点的距离
-def get_diff_feature(skelet,ref_point_index=3):#第三个点刚刚好是hip center
-    feature=skelet.swapaxes(1,2)
-    for i in range(feature.shape[1]):
-        feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
-    im=np.delete(feature,ref_point_index,axis=0)
+def Normalize_Skeleton(skelet, ref_point_index=3):#第三个点刚刚好是hip center
+    # feature=skelet.swapaxes(1,2)
+    # for i in range(feature.shape[1]):
+    #     feature[:,i,:]=feature[:,i,:]-np.repeat(np.expand_dims(feature[ref_point_index, i, :], axis=0),feature.shape[0],axis=0)
+    # im=np.delete(feature,ref_point_index,axis=0)
+    im=skelet
     factor=max_diff_channal(im)
     for i in range(im.shape[2]):
         im[:,:,i]=Normalize(im[:,:,i],factor)
@@ -111,7 +112,7 @@ def prepar_data(data_addr,n_classes):
         skelet = load_data(addr)  # skelet是numpy的ndarray类型
         token = addr.split('\\')[-1].split('_')
         i = int(token[0][1:]) - 1 # class
-        sample = get_diff_feature(skelet, 9)
+        sample = Normalize_Skeleton(skelet, 9)
         output_img(sample, addr)
         if( int(token[1][1:])%2==1):
             train_data_set[i,train_index[i]]=sample
