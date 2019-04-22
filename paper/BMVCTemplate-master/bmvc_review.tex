@@ -150,7 +150,7 @@ The purpose of our training algorithm is to address the learnable parameter of $
 
 $$loss(y=y^\ast | s^\ast,C_{support},W)=\log(\frac{\exp (-d(F_W(encode(s^\ast)),c_{y^\ast}))}{\sum_{i=1}^{k}\exp((F_W(encode(s^\ast)),c_i)})$$
 
-Having the loss function defined, we optimize the parameters of the model in few shot fashion. For each training iteration, we randomly divided the labeled samples into the support and query set. With which the cross-entropy loss of the model will be calculated to updated the parameter of the network. A detail description of training phase is provided in algorithm \ref{alg:2}.
+Having the loss function defined, we optimize the parameters of the model in few shot fashion. For each training iteration, we randomly divided the labeled samples into the support and query set. With which the cross-entropy loss of the model will be calculated to updated the parameter of the network. A detail description of training process is provided in algorithm \ref{alg:2}.
 
 
 \begin{algorithm}[htb]
