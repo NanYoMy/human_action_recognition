@@ -25,7 +25,7 @@ n_train_sample=int(n_sample_per_class/2)
 #test setting
 n_test_episodes = 1000
 n_test_way = n_classes
-n_test_support = 5
+n_test_support = 8
 n_test_query = int(n_sample_per_class/2)#n_test_shot+n_test_query<=22
 
 im_height,im_width,  channels = 20, 60, 3
@@ -166,7 +166,7 @@ def encoder(x, h_dim, z_dim,reuse=False):
         net = tf.layers.conv2d(net, h_dim*2, kernel_size=5,padding='SAME')  # 64 filters, each filter will generate a feature map.
         net = tf.contrib.layers.batch_norm(net, updates_collections=None, decay=0.99, scale=True, center=True)
         net = tf.nn.relu(net)
-        net = tf.layers.max_pooling2d(net, [2, 3], strides=[2, 3])
+        net = tf.layers.max_pooling2d(net, [2, 4], strides=[2, 4])
         #dense
         net = tf.layers.flatten(net)#tf.contrib.layers.flatten(P)这个函数就是把P保留第一个维度，把第一个维度包含的每一子张量展开成一个行向量，返回张量是一个二维的
 
