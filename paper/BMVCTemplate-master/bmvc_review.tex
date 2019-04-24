@@ -204,7 +204,7 @@ $$loss(y=y^\ast | s^\ast,C_{support},W)=\log(\frac{\exp (-d(F_W(encode(s^\ast)),
 As mentioned before, the whole architecture of our model is provided in Figure \ref{fig:1}. we construct the mapping function as a tiny convolution network, The structure is illustrated in Figure \ref{fig:2}. It composed of three dilated-conv-dense blocks, three convolution blocks and a flatten layer. We implemented our method on Tensorflow with GTX 1080 and evaluated it on two popular benchmarks. We train our model under few-shot setup. But it still achieves a comparable accuracy to the current existing fully supervised algorithm. Besides, we also show our model can adjust the new classes with a few labeled samples without retraining the parameter of the mapping function. A reproducible code is available in github. \url{https://github.com/NanYoMy/human_action_recognition}
 
 \subsection*{UTD-MHAD}
-The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times. For training the model, we follow the cross-subjects protocol on this dataset~\cite{chen2015utd}. And we selected 8 support samples per class from the training set to estimate the prototypes of the model. Table 1 shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs 8 labeled samples per class for training without any data augmentation  used in ~\cite{pham2017learning,li2017skeleton_2}, but still, we best model obtained an improvement of $1\%$ over the state-of-the-art .
+The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times. For training the model, we follow the cross-subjects protocol on this dataset~\cite{chen2015utd}. Table 1 shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs 16 labeled samples per class for training without any data augmentation used in ~\cite{pham2017learning,li2017skeleton_2}, but still, our best model obtained an improvement of $1\%$ over the ~\cite{li2017skeleton_2} .
 
 \begin{table}[htb]
 	\begin{center}		
@@ -218,7 +218,7 @@ The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 f
 			SOS & 86.97\% \\
 			JTM & 87.90\% \\
 			MSDCNN[21] & 96.27\% \\
-			Our Model & \bf{95.62\%} \\
+			Our Model & \bf{97.38\%} \\
 			\hline
 		\end{tabular}	
 	\end{center}		
