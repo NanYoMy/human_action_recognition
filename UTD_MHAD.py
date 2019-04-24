@@ -24,7 +24,7 @@ n_query = 4
 n_train_sample=int(n_sample_per_class/2)
 n_test_sample=int(n_sample_per_class/2)
 #test setting
-n_test_episodes = 100
+n_test_episodes = 500
 n_test_way = n_classes
 n_test_support = 8
 n_test_query = int(n_sample_per_class/2)#n_test_shot+n_test_query<=22
