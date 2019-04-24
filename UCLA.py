@@ -26,7 +26,7 @@ n_train_sample=10
 n_test_episodes = 5
 n_test_way = n_way
 n_test_support = n_support
-im_height,im_width,  channels = 20,50,3
+im_height,im_width,  channels = 20,60,3
 h_dim = 8
 z_dim = 64
 
