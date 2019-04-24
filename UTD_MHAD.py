@@ -21,7 +21,7 @@ n_sample_per_class=32
 n_way = n_classes
 n_support = 4
 n_query = 4
-n_train_sample=int(n_sample_per_class/4)
+n_train_sample=int(n_sample_per_class/2)
 n_test_sample=int(n_sample_per_class/2)
 #test setting
 n_test_episodes = 500
@@ -117,13 +117,13 @@ def prepar_data(data_addr,n_classes):
         sample = Normalize_Skeleton(skelet, 9)
         # output_img(sample, addr)
         if( int(token[1][1:])%2==1):
-            # train_data_set[i,train_index[i]]=sample
-            # train_index[i]+=1
-            if(int(token[2][1:])%2==1):
-                train_data_set[i,train_index[i]]=sample
-                train_index[i]+=1
-            else:
-                pass
+            train_data_set[i,train_index[i]]=sample
+            train_index[i]+=1
+            # if(int(token[2][1:])%2==1):
+            #     train_data_set[i,train_index[i]]=sample
+            #     train_index[i]+=1
+            # else:
+            #     pass
         else:
             test_data_set[i,test_index[i]]=sample
             test_index[i]+=1

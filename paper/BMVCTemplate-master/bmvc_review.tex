@@ -43,7 +43,7 @@
 \maketitle
 
 \begin{abstract}
-This paper presents a new skeleton-based action recognition method using a few shot learning. Consider the sequence data contain the temporal and spatial information; the proposed method encodes each of skeleton as an RGB image. Nothing more but a naïve normalization is engaged to each channel of the encoded skeleton image. In order to acquire the discriminative feature of skeleton image, dilated-dense layer is adopted in our model to both extend the receptive field of feature points and capture diversity representation of the skeleton image. After that, the prototypical network is introduced to recognize the specific action of the feature stands for. It can map the skeleton image into a metric space in which action classification can be performed by the nearest neighbor search. Benefited from the nature of the few shot learning, our model can be trained with only a few training samples. Moreover, it can adjust to the new classes that had not presented during the training phase with a few labeled samples. We evaluated our method with the seen and unseen class of samples, experiment result shows, the method achieved comparable performance on benchmark datasets.
+This paper presents a new skeleton-based action recognition method using a few shot learning. Consider the sequence data contain the temporal and spatial information; the proposed method encodes each of skeleton as an RGB image. Nothing more but a naïve normalization is engaged to each channel of the encoded skeleton image. In order to acquire the discriminative feature of skeleton image, dilated-dense layer is adopted in our model to both extend the receptive field of feature points and capture diversity representation of the skeleton image. After that, the prototypical network is introduced to recognize the specific action of the feature stands for. It can map the skeleton image into a metric space in which action classification can be performed by the nearest neighbor search. Benefited from the nature of the few shot learning, our model can be trained with only a few training samples. Moreover, it can adjust to the new action that had not presented during the training phase with a few labeled samples. experiment result shows, our method achieved comparable performance on benchmark datasets.
 
 \textbf{Index Terms:} skeleton sequence, dilated-dense layer, few shot learning
 \end{abstract}
@@ -204,7 +204,7 @@ $$loss(y=y^\ast | s^\ast,C_{support},W)=\log(\frac{\exp (-d(F_W(encode(s^\ast)),
 As mentioned before, the whole architecture of our model is provided in Figure \ref{fig:1}. we construct the mapping function as a tiny convolution network, The structure is illustrated in Figure \ref{fig:2}. It composed of three dilated-conv-dense blocks, three convolution blocks and a flatten layer. We implemented our method on Tensorflow with GTX 1080 and evaluated it on two popular benchmarks. We train our model under few-shot setup. But it still achieves a comparable accuracy to the current existing fully supervised algorithm. Besides, we also show our model can adjust the new classes with a few labeled samples without retraining the parameter of the mapping function. A reproducible code is available in github. \url{https://github.com/NanYoMy/human_action_recognition}
 
 \subsection*{UTD-MHAD}
-The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times. For training the model, we follow the cross-subjects protocol on this dataset~\cite{chen2015utd}. And we selected 8 support samples per class from the training set to estimate the prototypes of the model. Table 1 shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs 8 labeled samples per class for training without any data augmentation  used in ~\cite{pham2017learning,li2017skeleton_2}, but still, we obtain an improvement of $1\%$ over the state-of-the-art .
+The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 females and 4 males), Each subject repeated each action 4 times. For training the model, we follow the cross-subjects protocol on this dataset~\cite{chen2015utd}. And we selected 8 support samples per class from the training set to estimate the prototypes of the model. Table 1 shows the recognition accuracy of different methods on UTD-MHAD dataset. Compare to other algorithm, our method only needs 8 labeled samples per class for training without any data augmentation  used in ~\cite{pham2017learning,li2017skeleton_2}, but still, we best model obtained an improvement of $1\%$ over the state-of-the-art .
 
 \begin{table}[htb]
 	\begin{center}		
@@ -217,7 +217,7 @@ The UTD-MHAD dataset contains 27 classes of actions performed by 8 subjects (4 f
 			Cov3DJ & 85.58\%\\
 			SOS & 86.97\% \\
 			JTM & 87.90\% \\
-			TSIIM-MSDCNN[21] & 96.27\% \\
+			MSDCNN[21] & 96.27\% \\
 			Our Model & \bf{95.62\%} \\
 			\hline
 		\end{tabular}	
@@ -252,8 +252,8 @@ The KARD~\cite{gaglio2015human} dataset contains 18 actions, performed by 10 sub
 	\label{tab:2}
 \end{table}
 
-\subsection*{Disjoint Action Dataset}
-To investigate the performance of the model when dealing with the samples from the unseen classes, we must evaluate it with the action that have not presented during the training phase. For this purpose, the all class of the dataset is split into two disjoint sets as showed in Table \ref{tab:3}. The parameters of the mapping function are optimized on training set. For evaluation, we randomly select a few(one) support samples per class from the testing set to estimate the prototype of the classes. And the rest testing samples are used to validate the accuracy. Table \ref{tab:4} gives the performance of the model on the unseen action without retraining the parameter of the mapping function. 
+\subsection*{}
+To investigate the performance of the model when dealing with the samples from the new classes, we must evaluate it with the action that have not presented during the training phase. For this purpose, the all class of the dataset is split into two disjoint sets ( $ D_{tr} \cap D_{te} = \emptyset $  )as showed in Table \ref{tab:3}. The parameters of the mapping function are optimized on training set. For evaluation, we randomly select a few(one) support samples per class from the testing set to estimate the prototype of the classes. And the rest testing samples are used to validate the accuracy. Table \ref{tab:4} gives the performance of the model on the new action without retraining the parameter of the mapping function. 
 
 \begin{table}[htb]
 	\begin{center}
