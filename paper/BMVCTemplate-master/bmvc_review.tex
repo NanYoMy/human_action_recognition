@@ -258,7 +258,7 @@ The KARD~\cite{gaglio2015human} dataset contains 18 actions, performed by 10 sub
 	\label{tab:2}
 \end{table}
 
-\subsection*{UNSeen Action Dataset}
+\subsection*{UNSeen Actions}
 To investigate the performance of the model when dealing with the samples from the unseen classes, we must evaluate it with the action that have not presented during the training phase. For this purpose, the all class of the dataset is split into two disjoint sets as showed in Table \ref{tab:3}. The parameters of the mapping function are optimized on training set. For evaluation, we randomly select a few(one) support samples per class from the testing set to estimate the prototype of the classes. And the rest testing samples are used to validate the accuracy. Table \ref{tab:4} gives the performance of the model on the unseen action without retraining the parameter of the mapping function. 
 
 \begin{table}[htb]
