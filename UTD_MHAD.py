@@ -178,6 +178,8 @@ def encoder(x, h_dim, z_dim,reuse=False):
 
         return net
 
+
+
 def print_setting():
 
     print("n_sample_per_class=%d"%n_sample_per_class)
