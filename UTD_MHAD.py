@@ -18,16 +18,16 @@ n_epochs = 20
 n_episodes = 80
 n_classes=27
 n_sample_per_class=32
-n_way = n_classes
-n_support = 4
-n_query = 4
+n_way=-1
+n_support = -1
+n_query = -1
 n_train_sample=int(n_sample_per_class/2)
 n_test_sample=int(n_sample_per_class/2)
 #test setting
 n_test_episodes = 1000
-n_test_way = n_classes
-n_test_support = 8
-n_test_query = int(n_sample_per_class/2)#n_test_shot+n_test_query<=22
+n_test_way = -1
+n_test_support = -1
+n_test_query = -1#n_test_shot+n_test_query<=22
 
 im_height,im_width,  channels = 20, 60, 3
 h_dim =8

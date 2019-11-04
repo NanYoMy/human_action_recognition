@@ -16,6 +16,7 @@ UTD_MHAD_UNSeen.n_test_classes=10
 UTD_MHAD_UNSeen.n_way=17
 UTD_MHAD_UNSeen.n_test_way=10
 UTD_MHAD_UNSeen.n_test_episodes=1000
+#训练
 UTD_MHAD_UNSeen.n_support=1
 UTD_MHAD_UNSeen.n_test_support=1
 UTD_MHAD_UNSeen.train_test()
