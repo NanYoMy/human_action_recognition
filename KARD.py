@@ -19,6 +19,8 @@ n_episodes = 60
 n_classes=18
 n_sample_per_class=30
 n_way = -1
+n_train_samples=10
+n_test_samples=20
 n_support = -1
 n_query = -1
 #test setting
@@ -104,8 +106,8 @@ def getall(data_addr,n_classes,offset=0):
         data_set[i,j]=sample
     return data_set
 def prepar_data(data_addr,n_classes):
-    train_data_set = np.zeros([n_classes, n_query + n_support, im_height, im_width, 3], dtype=np.float32)
-    test_data_set = np.zeros([n_classes, n_sample_per_class - n_query - n_support, im_height, im_width, 3], dtype=np.float32)
+    train_data_set = np.zeros([n_classes, n_train_samples, im_height, im_width, 3], dtype=np.float32)
+    test_data_set = np.zeros([n_classes, n_test_samples, im_height, im_width, 3], dtype=np.float32)
     all_data_set=getall(data_addr, n_classes)
 
     for i in range(n_classes):
@@ -226,7 +228,7 @@ def train_test():
             选n_shot+n_query进行训练
             n_shot是作为参数，n_query作为训练样本
             '''
-            selected = np.random.permutation(n_support + n_query)[:n_support + n_query]
+            selected = np.random.permutation(n_train_samples)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
             query[i] = train_dataset[epi_cls, selected[n_support:]]
         labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
@@ -250,10 +252,10 @@ def train_test():
         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
 
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
-            query[i] = test_dataset[epi_cls, selected_query]
+            selected= np.random.permutation(n_test_samples)[:n_test_support+n_test_query]#从训练集合取support样本
+            # selected_query = np.random.permutation(n_test_query)#22个样本
+            support[i] = test_dataset[epi_cls, selected[:n_test_support]]#从训练集合取support样本
+            query[i] = test_dataset[epi_cls, selected[n_test_support:]]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
@@ -272,47 +274,47 @@ def train_test():
     #， 测试的修改：分27类 现在每次测试都是从32个样本里面随机抽5个当作支持向量，检验剩余27样本的数据，
     图片的生成：现在每次都是从sequnce中生成一张图片，能否生成多张图片？
     '''
-def load_test():
-
-    data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))  # all data
-    test_dataset, train_dataset = prepar_data(data_addr, n_classes)
-    print(test_dataset.shape)
-    sess = tf.Session()
-    saver = tf.train.import_meta_graph('%s.meta'%ckpt_path)
-    saver.restore(sess,ckpt_path)
-    graph = tf.get_default_graph()
-    x=graph.get_operation_by_name('x').outputs[0]
-    y=graph.get_operation_by_name('y').outputs[0]
-    q =graph.get_operation_by_name('q').outputs[0]
-    ce_loss=tf.get_collection('loss')[0]
-    acc=tf.get_collection('acc')[0]
-    avg_acc=0
-    avg_ls=0
-    for epi in range(n_test_episodes):
-
-        if is_sub_set:
-            epi_classes = np.random.permutation(AS)[:n_test_way]  # n_way表示类别
-        else:
-            epi_classes = np.random.permutation(n_classes)[:n_test_way]
-        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-        query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
-        for i, epi_cls in enumerate(epi_classes):
-
-            selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
-            selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = test_dataset[epi_cls, selected_support]#从训练集合取support样本
-            query[i] = test_dataset[epi_cls, selected_query]
-        # support = np.expand_dims(support, axis=-1)
-        # query = np.expand_dims(query, axis=-1)
-        labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
-        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
-
-        avg_acc += ac
-        avg_ls+=ls
-        if (epi+1) % 50 == 0:
-            print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
-    avg_acc /= n_test_episodes
-    avg_ls/=n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
-
+# def load_test():
+#
+#     data_addr = sorted(glob.glob('.\\data\\Skeleton3\\screen\\*.txt'))  # all data
+#     test_dataset, train_dataset = prepar_data(data_addr, n_classes)
+#     print(test_dataset.shape)
+#     sess = tf.Session()
+#     saver = tf.train.import_meta_graph('%s.meta'%ckpt_path)
+#     saver.restore(sess,ckpt_path)
+#     graph = tf.get_default_graph()
+#     x=graph.get_operation_by_name('x').outputs[0]
+#     y=graph.get_operation_by_name('y').outputs[0]
+#     q =graph.get_operation_by_name('q').outputs[0]
+#     ce_loss=tf.get_collection('loss')[0]
+#     acc=tf.get_collection('acc')[0]
+#     avg_acc=0
+#     avg_ls=0
+#     for epi in range(n_test_episodes):
+#
+#         if is_sub_set:
+#             epi_classes = np.random.permutation(AS)[:n_test_way]  # n_way表示类别
+#         else:
+#             epi_classes = np.random.permutation(n_classes)[:n_test_way]
+#         support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
+#         query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
+#         for i, epi_cls in enumerate(epi_classes):
+#
+#             selected_support = np.random.permutation(n_test_samples)[:n_test_support]#从训练集合取support样本
+#             selected_query = np.random.permutation(n_test_query)#22个样本
+#             support[i] = test_dataset[epi_cls, selected_support]#从训练集合取support样本
+#             query[i] = test_dataset[epi_cls, selected_query]
+#         # support = np.expand_dims(support, axis=-1)
+#         # query = np.expand_dims(query, axis=-1)
+#         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
+#         ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
+#
+#         avg_acc += ac
+#         avg_ls+=ls
+#         if (epi+1) % 50 == 0:
+#             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
+#     avg_acc /= n_test_episodes
+#     avg_ls/=n_test_episodes
+#     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
+#
 
