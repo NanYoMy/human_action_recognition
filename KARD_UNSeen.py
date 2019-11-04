@@ -18,16 +18,19 @@ n_joint=15
 n_episodes = 60
 n_classes=18
 n_sample_per_class=30
-n_way = 5
-n_support = 5
-n_query = n_sample_per_class-n_support
 #test setting
 n_test_episodes = 1000
-n_test_way = 5
-n_train_classes=8
-n_test_classes=8
-n_test_support = n_support
-n_test_query = n_sample_per_class - n_test_support#n_test_shot+n_test_query<=22
+
+
+n_train_classes= -1
+n_way = -1
+n_support = -1
+n_query = -1
+
+n_test_way = -1
+n_test_classes= -1
+n_test_support = -1
+n_test_query = -1#n_test_shot+n_test_query<=22
 AS_Train=np.array([0,1,2,3,4,5,6,7])
 AS_Test=np.array([10,11,12,13,14,15,16,17])
 im_height,im_width,  channels = 15,80, 3
