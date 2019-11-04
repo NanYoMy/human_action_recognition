@@ -3,9 +3,9 @@ import os
 import numpy as np
 KARD.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
 KARD.is_sub_set=True
-KARD.AS=np.array([1,9,3,6,12,8,11,16])
+KARD.AS=np.array([6,15,16,14,10,7,4,0])
 KARD.n_way=8
-KARD.n_episodes=100
+KARD.n_episodes=1000
 KARD.n_query=1
 KARD.n_support=1
 KARD.n_test_way=8
