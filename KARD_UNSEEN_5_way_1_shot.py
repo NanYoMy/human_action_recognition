@@ -2,7 +2,7 @@ import KARD_UNSeen
 import numpy as np
 import os
 KARD_UNSeen.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
-KARD_UNSeen.n_episodes=800
+KARD_UNSeen.n_episodes=1000
 KARD_UNSeen.n_train_classes=8
 KARD_UNSeen.n_test_classes=10
 
