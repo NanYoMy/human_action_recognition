@@ -1,0 +1,2 @@
+model_checkpoint_path: "KARD_UNSEEN_10_way_1_shot.py"
+all_model_checkpoint_paths: "KARD_UNSEEN_10_way_1_shot.py"
