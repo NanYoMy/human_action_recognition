@@ -23,17 +23,17 @@ n_sample_per_class = 32
 n_class=27
 #training
 n_episodes = 500
-n_train_classes = 10
-n_way = 5
-n_support = 5
-n_query = 5
+n_train_classes = -1
+n_way = -1
+n_support = -1
+n_query = -1
 
 # test setting
 n_test_episodes = 1500
-n_test_classes = 17
-n_test_way = 10
-n_test_support = 5
-n_test_query = n_sample_per_class-n_test_support  # n_test_shot+n_test_query<=32
+n_test_classes = -1
+n_test_way = -1
+n_test_support =-1
+n_test_query = -1 # n_test_shot+n_test_query<=32
 
 
 im_height,im_width,  channels = 20, 60, 3
@@ -283,7 +283,7 @@ def train_test():
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f}'.format(epi + 1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
     avg_ls /= n_test_episodes
-    print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_ls,avg_acc ))
+    print('Average Test loss: {:.5f} Average acc : {:.5f}'.format(avg_ls,avg_acc ))
 
 def load_test():
 
