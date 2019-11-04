@@ -18,14 +18,14 @@ n_joint=15
 n_episodes = 60
 n_classes=18
 n_sample_per_class=30
-n_way = 8
-n_support = 5
-n_query = 5
+n_way = -1
+n_support = -1
+n_query = -1
 #test setting
 n_test_episodes = 1000
-n_test_way = n_way
-n_test_support = n_support
-n_test_query = n_sample_per_class - n_support - n_query#n_test_shot+n_test_query<=22
+n_test_way = -1
+n_test_support = -1
+n_test_query = -1#n_test_shot+n_test_query<=22
 AS=np.array([0, 2, 11, 14, 17, 8, 13, 5])
 im_height,im_width,  channels = 15,80, 3
 h_dim = 8
@@ -300,7 +300,7 @@ def load_test():
 
             selected_support = np.random.permutation(n_query+n_support)[:n_test_support]#从训练集合取support样本
             selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = train_dataset[epi_cls, selected_support]#从训练集合取support样本
+            support[i] = test_dataset[epi_cls, selected_support]#从训练集合取support样本
             query[i] = test_dataset[epi_cls, selected_query]
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
