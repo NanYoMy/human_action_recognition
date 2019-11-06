@@ -1,2 +1,2 @@
-model_checkpoint_path: "KARD_UNSEEN_10_way_1_shot.py"
-all_model_checkpoint_paths: "KARD_UNSEEN_10_way_1_shot.py"
+model_checkpoint_path: "UTD_MHAD_10way_1shot.py"
+all_model_checkpoint_paths: "UTD_MHAD_10way_1shot.py"

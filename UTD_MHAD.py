@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
+import time
 #train setting
 '''
 training:使用4个support样本，利用4个query,对模型进行训练
@@ -232,6 +233,9 @@ def train_test():
     sess = tf.InteractiveSession()
     init_op = tf.global_variables_initializer()
     sess.run(init_op)
+
+
+    time.clock()
     for epi in range(n_episodes):
         '''
         随机产生一个数组，包含0-n_classes,取期中n_way个类
@@ -252,7 +256,7 @@ def train_test():
 
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
-
+    print("training time %s"%time.clock())
     saver.save(sess, ckpt_path)
 
     avg_acc = 0.
