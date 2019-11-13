@@ -1,7 +1,7 @@
 import UTD_MHAD_prototypical as UTD_MHAD
 import os
 UTD_MHAD.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
-UTD_MHAD.n_episodes=2000
+UTD_MHAD.n_episodes=1000
 UTD_MHAD.n_way = 27
 UTD_MHAD.n_support=1
 UTD_MHAD.n_query=1
