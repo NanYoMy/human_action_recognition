@@ -1,4 +1,4 @@
-import UTD_MHAD_original as UTD_MHAD
+import UTD_MHAD_prototypical as UTD_MHAD
 import os
 UTD_MHAD.ckpt_path='./ckpt/%s'%os.path.basename(__file__)
 UTD_MHAD.n_episodes=2500
