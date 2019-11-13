@@ -1,2 +1,2 @@
-model_checkpoint_path: "UTD_MHAD_10way_1shot.py"
-all_model_checkpoint_paths: "UTD_MHAD_10way_1shot.py"
+model_checkpoint_path: "KARD_protopypical_4_way_5_shot_SubSet1.py"
+all_model_checkpoint_paths: "KARD_protopypical_4_way_5_shot_SubSet1.py"
