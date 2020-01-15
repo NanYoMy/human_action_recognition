@@ -100,7 +100,6 @@ def output_img(skeleimg, path, type=1):
     else:
         pass
 
-
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
 
