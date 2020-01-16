@@ -100,6 +100,7 @@ def output_img(skeleimg, path, type=1):
     else:
         pass
 
+
 def getall(data_addr,n_classes,offset=0):
     data_set=np.zeros([n_classes,n_sample_per_class,im_height, im_width,3], dtype=np.float32)
 
@@ -192,6 +193,7 @@ def print_setting():
     print("n_test_shot=%d" % n_test_support)
     print("n_test_query=%d" %n_test_query)
 
+
 def train_test():
     print_setting()
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
@@ -199,32 +201,32 @@ def train_test():
     print(train_dataset.shape)#(10, 32, 60, 40, 3)
     print(test_dataset.shape)#(10, 32, 60, 40, 3)
 
-    x = tf.placeholder(tf.float32, [None,  im_height, im_width, channels],name='x')
-    q = tf.placeholder(tf.float32, [None,  im_height, im_width, channels],name='q')
+    x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='x')
+    q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='q')
     x_shape = tf.shape(x)
     q_shape = tf.shape(q)
     #训练的时候具有support sample的参数
-    num_support = x_shape[0]# num_class num_support_sample
-    num_queries = q_shape[0]#num_query_sample
+    num_classes, num_support = x_shape[0], x_shape[1]# num_class num_support_sample
+    num_queries = q_shape[1]#num_query_sample
     #y为label数据由外部导入
-    y = tf.placeholder(tf.float, [None, None],name='y')
-    y_prob_hot=tf.placeholder(tf.float, [None, None],name='y_sample_prob') # dimesion of each one_hot vector
+    y = tf.placeholder(tf.int64, [None, None],name='y')
+    y_one_hot = tf.one_hot(y, depth=num_classes)# dimesion of each one_hot vector
     #emb_x是样本通过encoder之后的结果
-    emb_x = encoder(tf.reshape(x, [ num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
+    emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
     emb_dim = tf.shape(emb_x)[-1] # the last dimesion
     # CLASS_NUM,128
-    emb_x = tf.reduce_mean(tf.reshape(emb_x, [ num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
+    emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
     #CLASS_NUM*QUERY_NUM_PER_CLASS,128
-    emb_q = encoder(tf.reshape(q, [ num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
+    emb_q = encoder(tf.reshape(q, [num_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
 
     dists = euclidean_distance(emb_q, emb_x)
 
     #log_pY= 的index=1的元素为 {exp(s_i,c_1),exp(s_i,c_2)....exp(s_i,c_n)}/\Sigma{exp(s_i,c_1),exp(s_i,c_2)....exp(s_i,c_n)}
     #也就是s_i的对应每个类别的概率，
-    log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [ num_queries, -1])#-1表示自动计算剩余维度，paper中公式2 log_softmax 默认 axis=-1
+    log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_classes, num_queries, -1])#-1表示自动计算剩余维度，paper中公式2 log_softmax 默认 axis=-1
     #其实这里并不是真正意义上的cross_entropy
     #
-    ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_prob_hot, log_p_y), axis=-1), [-1]),name='loss')#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
+    ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_one_hot, log_p_y), axis=-1), [-1]),name='loss')#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
     acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)),name='acc')
 
     tf.add_to_collection('acc', acc)
@@ -242,12 +244,12 @@ def train_test():
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
         epi_classes = np.random.permutation(n_classes)[:n_way]  # n_way表示类别
-        support = np.zeros([n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
-        query = np.zeros([n_query, im_height, im_width, channels], dtype=np.float32)
+        support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)  # n_shot表示样本的数目
+        query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
         for i, epi_cls in enumerate(epi_classes):
             '''
-            选n_shot+n_query进行训练
-            n_shot是作为参数，n_query作为训练样本
+            选n_support+n_query进行训练
+            n_support是作为参数，n_query作为训练样本
             '''
             selected = np.random.permutation(n_train_sample)[:n_support + n_query]
             support[i] = train_dataset[epi_cls, selected[:n_support]]
@@ -323,7 +325,7 @@ def train_test():
 #     avg_acc /= n_test_episodes
 #     avg_ls/=n_test_episodes
 #     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
-if __file__=="__main__":
+if __name__ == "__main__":
     ckpt_path = './ckpt/%s' % os.path.basename(__file__)
     n_episodes = 2500
     n_way = 10
