@@ -217,7 +217,7 @@ def train_test():
     # CLASS_NUM,128
     emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
     #CLASS_NUM*QUERY_NUM_PER_CLASS,128
-    emb_q = encoder(tf.reshape(q, [num_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
+    emb_q = encoder(tf.reshape(q, [num_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=False)
 
     dists = euclidean_distance(emb_q, emb_x)
 
