@@ -249,7 +249,7 @@ def train_test():
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
 
-        query, support=sample(  train_dataset)
+        labels,query, support=sample(train_dataset)
         '''
         3类4个样本
         [
@@ -259,9 +259,9 @@ def train_test():
         [3 3 3]
         ]
         '''
-        labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
-        _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
 
+        _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
+        print(y_one_hot.eval({x: support, q: query, y: labels}))
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
     print("training time %s"%time.clock())
@@ -293,15 +293,25 @@ def train_test():
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
 
 
-def sample(epi_classes, train_dataset):
-    epi_classes = np.random.permutation(n_classes)[:n_way]
+def sample( train_dataset):
+    '''
+    n_way表示有多少个patch
+    :param train_dataset:
+    :return:
+    '''
+    epi_classes = np.random.randint(0,6,n_way)
+    # epi_classes = np.random.permutation(n_classes)[:n_way]
     support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
         selected = np.random.permutation(n_train_sample)[:n_support + n_query]
         support[i] = train_dataset[epi_cls, selected[:n_support]]
         query[i] = train_dataset[epi_cls, selected[n_support:]]
-    return query, support
+
+    labels = np.tile(epi_classes[:, np.newaxis], (1, n_query)).astype(np.uint8)
+    print(epi_classes)
+    # print(labels)
+    return labels,query, support
 
 #
 # def load_test():
