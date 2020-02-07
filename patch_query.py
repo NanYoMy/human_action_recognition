@@ -271,13 +271,15 @@ def train_test():
         _, ls = sess.run([train_op, ce_loss], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
         gt, predict = sess.run([y_n_hot, log_p_y], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
         ac=acc(epi_classes,predict)
-        print(gt)
-        print(predict)
+        # print(gt)
+        # print(predict)
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
     print("training time %s"%time.clock())
     saver.save(sess, ckpt_path)
 
+
+#####################################################################
     avg_acc = 0.
     avg_ls=0.
     for epi in range(n_test_episodes):
