@@ -1,2 +1,2 @@
-model_checkpoint_path: "patch_query_network.py"
-all_model_checkpoint_paths: "patch_query_network.py"
+model_checkpoint_path: "patch_query.py"
+all_model_checkpoint_paths: "patch_query.py"

@@ -10,6 +10,7 @@ from skimage import transform,io
 import tensorflow as tf
 import scipy.io as sio
 import time
+from random import choice
 #train setting
 '''
 training:使用4个support样本，利用4个query,对模型进行训练
@@ -29,7 +30,7 @@ n_test_episodes = 1000
 n_test_way = -1
 n_test_support = -1
 n_test_query = -1#n_test_shot+n_test_query<=22
-
+n_sample_class_size=6
 im_height,im_width,  channels = 20, 60, 3
 h_dim =8
 z_dim = 64
@@ -195,18 +196,18 @@ def train_test():
     print_setting()
     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))# all data
     test_dataset,train_dataset=prepar_data(data_addr, n_classes)
-    print(train_dataset.shape)#(10, 32, 60, 40, 3)
+    print(train_dataset.shape)#(17, 32, 60, 40, 3)
     print(test_dataset.shape)#(10, 32, 60, 40, 3)
 
-    x = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='x')
-    q = tf.placeholder(tf.float32, [None, None, im_height, im_width, channels],name='q')
+    x = tf.placeholder(tf.float32, [n_way, n_support, im_height, im_width, channels],name='x')
+    q = tf.placeholder(tf.float32, [n_way, n_support, im_height, im_width, channels],name='q')
     x_shape = tf.shape(x)
     q_shape = tf.shape(q)
     #训练的时候具有support sample的参数
     num_classes, num_support = x_shape[0], x_shape[1]# num_class num_support_sample
     num_queries = q_shape[1]#num_query_sample
     #y为label数据由外部导入
-    y = tf.placeholder(tf.int64, [None, None],name='y')
+    y = tf.placeholder(tf.int64, [n_way, n_support],name='y')
     '''
             2类3个样本
             [
@@ -215,12 +216,16 @@ def train_test():
             [[0 0 1] [0 0 1] [0 0 1]]
             ]
     '''
-    y_one_hot = tf.one_hot(y, depth=num_classes)# dimesion of each one_hot vector
+    y_one_hot = tf.one_hot(y, depth=n_way)# dimesion of each one_hot vector
     #emb_x是样本通过encoder之后的结果
     emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
     emb_dim = tf.shape(emb_x)[-1] # the last dimesion
     # CLASS_NUM,128
-    emb_x = tf.reduce_mean(tf.reshape(emb_x, [num_classes, num_support, emb_dim]), axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
+    # 这个地方，不能简单的计算平均，要看y的值
+    emb_x=tf.reshape(emb_x, [num_classes, num_support, emb_dim])
+    emb_x = tf.reduce_mean(emb_x, axis=1)#计算每一类的均值，每一个类的样本都通过CNN映射到高维度空间
+
+
     #CLASS_NUM*QUERY_NUM_PER_CLASS,128
     emb_q = encoder(tf.reshape(q, [num_classes * num_queries, im_height, im_width, channels]), h_dim, z_dim, reuse=True)
 
@@ -262,6 +267,7 @@ def train_test():
 
         _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
         print(y_one_hot.eval({x: support, q: query, y: labels}))
+        # print(dists.eval({x: support, q: query, y: labels}))
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
     print("training time %s"%time.clock())
@@ -293,14 +299,20 @@ def train_test():
     print('Average Test Accuracy: {:.5f} Average loss : {:.5f}'.format(avg_acc,avg_ls))
 
 
+
 def sample( train_dataset):
     '''
     n_way表示有多少个patch
     :param train_dataset:
     :return:
     '''
-    epi_classes = np.random.randint(0,6,n_way)
+    label_set= np.random.permutation(n_classes)[:n_sample_class_size]
+    epi_classes = [choice(label_set) for i in range(n_way)]
+
+    print(epi_classes)
     # epi_classes = np.random.permutation(n_classes)[:n_way]
+
+
     support = np.zeros([n_way, n_support, im_height, im_width, channels], dtype=np.float32)
     query = np.zeros([n_way, n_query, im_height, im_width, channels], dtype=np.float32)
     for i, epi_cls in enumerate(epi_classes):
@@ -308,8 +320,11 @@ def sample( train_dataset):
         support[i] = train_dataset[epi_cls, selected[:n_support]]
         query[i] = train_dataset[epi_cls, selected[n_support:]]
 
-    labels = np.tile(epi_classes[:, np.newaxis], (1, n_query)).astype(np.uint8)
-    print(epi_classes)
+    refined_classes=[label_set.tolist().index(e) for e in epi_classes]
+    refined_classes = np.array(refined_classes)
+    labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
+    # print(refined_classes)
+
     # print(labels)
     return labels,query, support
 
