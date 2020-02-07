@@ -207,7 +207,8 @@ def train_test():
     num_classes, num_support = x_shape[0], x_shape[1]# num_class num_support_sample
     num_queries = q_shape[1]#num_query_sample
     #y为label数据由外部导入
-    y = tf.placeholder(tf.int64, [n_way, n_support],name='y')
+    # y = tf.placeholder(tf.int64, [n_way, n_support],name='y')
+    y_n_hot = tf.placeholder(tf.int64, [n_way, n_support,n_way],name='y_n_hot')# dimesion of each one_hot vector
     '''
             2类3个样本
             [
@@ -216,7 +217,8 @@ def train_test():
             [[0 0 1] [0 0 1] [0 0 1]]
             ]
     '''
-    y_one_hot = tf.one_hot(y, depth=n_way)# dimesion of each one_hot vector
+    # y_one_hot = tf.one_hot(y, depth=n_way)# dimesion of each one_hot vector
+
     #emb_x是样本通过encoder之后的结果
     emb_x = encoder(tf.reshape(x, [num_classes * num_support, im_height, im_width, channels]), h_dim, z_dim,reuse=False)
     emb_dim = tf.shape(emb_x)[-1] # the last dimesion
@@ -236,10 +238,11 @@ def train_test():
     log_p_y = tf.reshape(tf.nn.log_softmax(-dists), [num_classes, num_queries, -1])#-1表示自动计算剩余维度，paper中公式2 log_softmax 默认 axis=-1
     #其实这里并不是真正意义上的cross_entropy
     #
-    ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(y_one_hot, log_p_y), axis=-1), [-1]),name='loss')#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
-    acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y)),name='acc')
+    ce_loss = -tf.reduce_mean(tf.reshape(tf.reduce_sum(tf.multiply(tf.to_float(y_n_hot), log_p_y), axis=-1), [-1]),name='loss')#reshpae(a,[-1])会展开所有维度, ce_loss=cross entropy
 
-    tf.add_to_collection('acc', acc)
+    # acc = tf.reduce_mean(tf.to_float(tf.equal(tf.argmax(log_p_y, axis=-1), y_n_hot)),name='acc')
+    #
+    # tf.add_to_collection('acc', acc)
     tf.add_to_collection('loss', ce_loss)
     train_op = tf.train.AdamOptimizer().minimize(ce_loss)
     saver = tf.train.Saver()
@@ -254,7 +257,7 @@ def train_test():
         随机产生一个数组，包含0-n_classes,取期中n_way个类
         '''
 
-        labels,query, support=sample(train_dataset)
+        epi_classes,y_n_labels,query, support=sample(train_dataset)
         '''
         3类4个样本
         [
@@ -265,9 +268,11 @@ def train_test():
         ]
         '''
 
-        _, ls, ac = sess.run([train_op, ce_loss, acc], feed_dict={x: support, q: query, y: labels})
-        print(y_one_hot.eval({x: support, q: query, y: labels}))
-        # print(dists.eval({x: support, q: query, y: labels}))
+        _, ls = sess.run([train_op, ce_loss], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
+        gt, predict = sess.run([y_n_hot, log_p_y], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
+        ac=acc(epi_classes,predict)
+        print(gt)
+        print(predict)
         #if (epi + 1) %50 == 0:
         print('[ episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi + 1,n_episodes,ls,ac))
     print("training time %s"%time.clock())
@@ -288,7 +293,7 @@ def train_test():
         # support = np.expand_dims(support, axis=-1)
         # query = np.expand_dims(query, axis=-1)
         labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
-        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y:labels})
+        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
 
         avg_acc += ac
         avg_ls+=ls
@@ -322,13 +327,34 @@ def sample( train_dataset):
 
     refined_classes=[label_set.tolist().index(e) for e in epi_classes]
     refined_classes = np.array(refined_classes)
-    labels = np.tile(np.arange(n_way)[:, np.newaxis], (1, n_query)).astype(np.uint8)
+    labels = np.tile(refined_classes[:, np.newaxis], (1, n_query)).astype(np.uint8)
     # print(refined_classes)
+    y_n_hot=np.zeros([n_way,n_query,n_way],np.uint8)
 
+    for i,label in enumerate(epi_classes):
+        n_hot=np.where(epi_classes==label,1,0)
+        y_n_hot[i,0,:]=n_hot
     # print(labels)
-    return labels,query, support
+    # print(y_n_hot)
 
-#
+    return epi_classes,y_n_hot,query, support
+
+
+def acc(epi_class,log_n_y):
+    dis=np.zeros([n_way])
+    correct=0.0
+    for way in range(n_way):
+        prob=log_n_y[way][0]
+
+        for i,label in enumerate(epi_class):
+            n_hot=np.where(epi_class==label,1,0)
+            dis[i]=np.sum(n_hot*prob)/np.sum(n_hot)
+        index=np.argmax(dis)
+        if epi_class[index]==epi_class[way]:
+            correct=correct+1
+    return correct/n_way
+
+
 # def load_test():
 #
 #     data_addr = sorted(glob.glob('.\\data\\Skeleton\\data\\*.mat'))  # all data
