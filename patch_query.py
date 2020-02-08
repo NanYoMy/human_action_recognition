@@ -324,6 +324,7 @@ def sample( train_dataset):
     # print(refined_classes)
     y_n_hot=np.zeros([n_way,n_query,n_way],np.uint8)
 
+    #这里的sample不再是one_hot而是n_hot
     for i,label in enumerate(epi_classes):
         n_hot=np.where(epi_classes==label,1,0)
         y_n_hot[i,0,:]=n_hot
@@ -343,6 +344,7 @@ def acc(epi_class,log_n_y):
             n_hot=np.where(epi_class==label,1,0)
             dis[i]=np.sum(n_hot*prob)/np.sum(n_hot)
         index=np.argmax(dis)
+        #最大的类的和查询的类一样
         if epi_class[index]==epi_class[way]:
             correct=correct+1
     return correct/n_way
