@@ -283,22 +283,13 @@ def train_test():
     avg_acc = 0.
     avg_ls=0.
     for epi in range(n_test_episodes):
-        epi_classes = np.random.permutation(n_classes)[:n_test_way]
-        support = np.zeros([n_test_way, n_test_support, im_height, im_width, channels], dtype=np.float32)
-        query = np.zeros([n_test_way, n_test_query, im_height, im_width,channels], dtype=np.float32)
-        for i, epi_cls in enumerate(epi_classes):
 
-            selected = np.random.permutation(n_test_sample)[:n_test_support+n_test_query]#从训练集合取support样本
-            # selected_query = np.random.permutation(n_test_query)#22个样本
-            support[i] = test_dataset[epi_cls, selected[:n_test_support]]#从训练集合取support样本
-            query[i] = test_dataset[epi_cls, selected[n_test_support:]]
-        # support = np.expand_dims(support, axis=-1)
-        # query = np.expand_dims(query, axis=-1)
-        labels = np.tile(np.arange(n_test_way)[:, np.newaxis], (1, n_test_query)).astype(np.uint8)
-        ls, ac = sess.run([ce_loss, acc], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
-
-        avg_acc += ac
+        epi_classes, y_n_labels, query, support = sample(test_dataset)
+        ls = sess.run(ce_loss, feed_dict={x: support, q: query, y_n_hot: y_n_labels})
+        gt, predict = sess.run([y_n_hot, log_p_y], feed_dict={x: support, q: query, y_n_hot: y_n_labels})
+        ac = acc(epi_classes, predict)
         avg_ls+=ls
+        avg_acc+=ac
         if (epi+1) % 50 == 0:
             print('[test episode {}/{}] => loss: {:.5f}, acc: {:.5f} '.format(epi+1, n_test_episodes, ls, ac))
     avg_acc /= n_test_episodes
@@ -316,7 +307,7 @@ def sample( train_dataset):
     label_set= np.random.permutation(n_classes)[:n_sample_class_size]
     epi_classes = [choice(label_set) for i in range(n_way)]
 
-    print(epi_classes)
+    # print(epi_classes)
     # epi_classes = np.random.permutation(n_classes)[:n_way]
 
 
